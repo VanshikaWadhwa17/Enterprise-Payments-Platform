@@ -1,4 +1,9 @@
-// Public API surface of @epp/ui.
-// Shared, presentation-only Angular components grouped by kind:
-// buttons, tables, modals, forms, cards, charts.
-// Exports are added here as components are implemented.
+export * from './lib/button/button';
+export * from './lib/card/card';
+export * from './lib/table/table';
+export * from './lib/table/table.types';
+export * from './lib/modal/modal';
+export * from './lib/badge/status-badge';
+export * from './lib/spinner/spinner';
+export * from './lib/empty-state/empty-state';
+export * from './lib/error-state/error-state';

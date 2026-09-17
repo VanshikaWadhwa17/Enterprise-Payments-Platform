@@ -1,0 +1,26 @@
+<section class="payment-list">
+  <header class="payment-list__header">
+    <h2>Payments</h2>
+    <ui-button variant="primary" (clicked)="createPayment()"
+      >Create payment</ui-button
+    >
+  </header>
+
+  @if (loading()) {
+  <ui-spinner label="Loading payments…" />
+  } @else if (error()) {
+  <ui-error-state [message]="error()!" (retry)="load()" />
+  } @else if (payments().length === 0) {
+  <ui-empty-state
+    title="No payments yet"
+    description="Payments you create will show up here."
+  />
+  } @else {
+  <ui-table
+    [rows]="payments()"
+    [columns]="columns"
+    trackByKey="id"
+    (rowClick)="openPayment($event)"
+  />
+  }
+</section>

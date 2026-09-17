@@ -1,0 +1,57 @@
+<section class="payment-create">
+  <ui-button variant="ghost" (clicked)="cancel()"
+    >&larr; Back to payments</ui-button
+  >
+
+  <ui-card title="Create payment">
+    <form [formGroup]="form" (ngSubmit)="submit()" class="payment-create__form">
+      <label class="field">
+        <span>Amount</span>
+        <input type="number" formControlName="amount" min="0.01" step="0.01" />
+      </label>
+
+      <label class="field">
+        <span>Currency</span>
+        <select formControlName="currency">
+          @for (currency of currencies; track currency) {
+          <option [value]="currency">{{ currency }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Beneficiary name</span>
+        <input type="text" formControlName="beneficiaryName" />
+      </label>
+
+      <label class="field">
+        <span>Account number</span>
+        <input type="text" formControlName="accountNumber" />
+      </label>
+
+      <label class="field">
+        <span>Country code</span>
+        <input
+          type="text"
+          formControlName="country"
+          maxlength="2"
+          placeholder="IE"
+        />
+      </label>
+
+      @if (error()) {
+      <p class="payment-create__error">{{ error() }}</p>
+      }
+
+      <div class="payment-create__actions">
+        <ui-button
+          type="submit"
+          [loading]="submitting()"
+          [disabled]="form.invalid"
+        >
+          Create payment
+        </ui-button>
+      </div>
+    </form>
+  </ui-card>
+</section>

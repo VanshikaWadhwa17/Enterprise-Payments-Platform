@@ -4,9 +4,13 @@ import { loadRemoteModule } from '@angular-architects/native-federation';
 export const appRoutes: Route[] = [
   { path: '', pathMatch: 'full', redirectTo: 'payments' },
   {
+    path: 'login',
+    loadComponent: () => import('./pages/login/login').then((m) => m.Login),
+  },
+  {
     path: 'payments',
-    loadComponent: () =>
-      loadRemoteModule('payments', './Component').then((m) => m.App),
+    loadChildren: () =>
+      loadRemoteModule('payments', './Routes').then((m) => m.appRoutes),
   },
   {
     path: 'fraud',

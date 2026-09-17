@@ -1,0 +1,22 @@
+@if (open()) {
+<div class="ui-modal-backdrop">
+  <div class="ui-modal">
+    <header class="ui-modal__header">
+      @if (title()) {
+      <h3>{{ title() }}</h3>
+      }
+      <button
+        type="button"
+        class="ui-modal__close"
+        aria-label="Close"
+        (click)="close()"
+      >
+        &times;
+      </button>
+    </header>
+    <div class="ui-modal__body">
+      <ng-content></ng-content>
+    </div>
+  </div>
+</div>
+}

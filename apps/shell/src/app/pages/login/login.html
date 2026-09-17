@@ -1,0 +1,30 @@
+<section class="login">
+  <ui-card title="Sign in">
+    <p class="login__hint">
+      Mock authentication for local development. Pick a demo user to see how
+      role-based access shapes the app. Real authentication and authorization
+      will be enforced by the backend.
+    </p>
+
+    <fieldset class="login__users">
+      @for (user of demoUsers; track user.username) {
+      <label class="login__user">
+        <input
+          type="radio"
+          name="demoUser"
+          [value]="user.username"
+          [checked]="selectedUsername() === user.username"
+          (change)="select(user.username)"
+        />
+        <span>
+          <strong>{{ user.username }}</strong> &middot; {{ user.role }}
+          <br />
+          <small>{{ user.description }}</small>
+        </span>
+      </label>
+      }
+    </fieldset>
+
+    <ui-button variant="primary" (clicked)="login()">Sign in</ui-button>
+  </ui-card>
+</section>

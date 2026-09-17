@@ -1,0 +1,33 @@
+.login {
+  max-width: 420px;
+  margin: 2rem auto;
+}
+
+.login__hint {
+  color: #64748b;
+  font-size: 0.85rem;
+  margin-top: 0;
+}
+
+.login__users {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border: none;
+  padding: 0;
+  margin: 0 0 1.25rem;
+}
+
+.login__user {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+
+  small {
+    color: #64748b;
+  }
+}

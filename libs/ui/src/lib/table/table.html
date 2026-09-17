@@ -1,0 +1,22 @@
+<table class="ui-table">
+  <thead>
+    <tr>
+      @for (column of columns(); track column.key) {
+      <th>{{ column.label }}</th>
+      }
+    </tr>
+  </thead>
+  <tbody>
+    @for (row of rows(); track trackRow($index, row)) {
+    <tr class="ui-table__row" (click)="rowClick.emit(row)">
+      @for (column of columns(); track column.key) {
+      <td [class.ui-table__cell--money]="column.cellType === 'money'">
+        @switch (column.cellType ?? 'text') { @case ('badge') {
+        <ui-status-badge [status]="cellStatus(column, row)" />
+        } @default { {{ cellValue(column, row) }} } }
+      </td>
+      }
+    </tr>
+    }
+  </tbody>
+</table>

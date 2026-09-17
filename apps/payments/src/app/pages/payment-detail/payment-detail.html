@@ -1,0 +1,30 @@
+<section class="payment-detail">
+  <ui-button variant="ghost" (clicked)="back()"
+    >&larr; Back to payments</ui-button
+  >
+
+  @if (loading()) {
+  <p>Loading…</p>
+  } @else if (payment(); as p) {
+  <ui-card [title]="'Payment ' + p.id">
+    <dl class="payment-detail__fields">
+      <dt>Amount</dt>
+      <dd>{{ formatMoney(p.amount) }}</dd>
+
+      <dt>Status</dt>
+      <dd><ui-status-badge [status]="p.status" /></dd>
+
+      <dt>Beneficiary</dt>
+      <dd>{{ p.beneficiary.name }}</dd>
+
+      <dt>Account number</dt>
+      <dd>{{ p.beneficiary.accountNumber }}</dd>
+
+      <dt>Created</dt>
+      <dd>{{ p.createdAt | date: 'medium' }}</dd>
+    </dl>
+  </ui-card>
+  } @else {
+  <p>Payment not found.</p>
+  }
+</section>

@@ -7,7 +7,7 @@ export default withNativeFederation({
   name: 'payments',
 
   exposes: {
-    './Component': './apps/payments/src/app/app.ts',
+    './Routes': './apps/payments/src/app/app.routes.ts',
   },
 
   shared: {

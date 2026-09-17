@@ -1,4 +1,4 @@
-import type { Beneficiary } from './beneficiary.types';
+import type { Beneficiary, CreateBeneficiary } from './beneficiary.types';
 
 export type Currency = 'EUR' | 'USD' | 'GBP';
 
@@ -30,7 +30,9 @@ export interface Payment {
 
 export type CreatePayment = Omit<
   Payment,
-  'id' | 'status' | 'createdAt' | 'updatedAt'
->;
+  'id' | 'status' | 'createdAt' | 'updatedAt' | 'beneficiary'
+> & {
+  beneficiary: CreateBeneficiary;
+};
 
 export type PaymentSummary = Pick<Payment, 'id' | 'amount' | 'status'>;
