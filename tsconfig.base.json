@@ -1,0 +1,31 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "bundler",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "esnext",
+    "lib": ["es2020", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@epp/types": ["./libs/types/src/index.ts"],
+      "@epp/utils": ["./libs/utils/src/index.ts"],
+      "@epp/graphql": ["./libs/graphql/src/index.ts"],
+      "@epp/ui": ["./libs/ui/src/index.ts"],
+      "@epp/auth": ["./libs/auth/src/index.ts"],
+      "@epp/state": ["./libs/state/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

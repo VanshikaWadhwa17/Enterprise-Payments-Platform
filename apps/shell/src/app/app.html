@@ -1,0 +1,11 @@
+<header class="shell-header">
+  <h1>{{ title }}</h1>
+  <nav>
+    @for (item of navItems; track item.path) {
+    <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
+    }
+  </nav>
+</header>
+<main>
+  <router-outlet></router-outlet>
+</main>

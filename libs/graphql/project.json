@@ -1,0 +1,19 @@
+{
+  "name": "graphql",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/graphql/src",
+  "projectType": "library",
+  "tags": ["type:lib", "scope:graphql"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/graphql",
+        "main": "libs/graphql/src/index.ts",
+        "tsConfig": "libs/graphql/tsconfig.lib.json",
+        "assets": ["libs/graphql/*.md"]
+      }
+    }
+  }
+}
