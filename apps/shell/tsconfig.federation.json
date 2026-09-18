@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.app.json",
   "files": [
+    "../../libs/graphql/src/index.ts",
     "../../libs/types/src/index.ts",
     "../../libs/auth/src/index.ts",
     "../../libs/ui/src/index.ts"

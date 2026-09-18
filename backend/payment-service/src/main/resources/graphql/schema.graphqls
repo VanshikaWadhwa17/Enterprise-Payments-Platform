@@ -1,0 +1,56 @@
+type Query {
+  payments: [Payment!]!
+  payment(id: ID!): Payment
+}
+
+type Mutation {
+  createPayment(input: CreatePaymentInput!): Payment!
+  updatePaymentStatus(id: ID!, status: PaymentStatus!): Payment!
+}
+
+type Payment {
+  id: ID!
+  amount: Money!
+  status: PaymentStatus!
+  beneficiary: Beneficiary!
+  reference: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+type Money {
+  amount: Float!
+  currency: Currency!
+}
+
+type Beneficiary {
+  name: String!
+  accountNumber: String!
+  country: String!
+}
+
+enum Currency {
+  EUR
+  USD
+  GBP
+}
+
+enum PaymentStatus {
+  CREATED
+  VALIDATED
+  PENDING_APPROVAL
+  APPROVED
+  PROCESSING
+  COMPLETED
+  FAILED
+  REJECTED
+  CANCELLED
+}
+
+input CreatePaymentInput {
+  amount: Float!
+  currency: Currency!
+  beneficiaryName: String!
+  beneficiaryAccountNumber: String!
+  beneficiaryCountry: String!
+}

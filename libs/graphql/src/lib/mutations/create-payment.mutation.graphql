@@ -1,0 +1,5 @@
+mutation CreatePayment($input: CreatePaymentInput!) {
+  createPayment(input: $input) {
+    ...PaymentFields
+  }
+}

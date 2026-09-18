@@ -1,0 +1,5 @@
+mutation UpdatePaymentStatus($id: ID!, $status: PaymentStatus!) {
+  updatePaymentStatus(id: $id, status: $status) {
+    ...PaymentFields
+  }
+}

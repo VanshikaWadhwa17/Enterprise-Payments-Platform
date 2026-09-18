@@ -1,0 +1,5 @@
+query GetPayment($id: ID!) {
+  payment(id: $id) {
+    ...PaymentFields
+  }
+}

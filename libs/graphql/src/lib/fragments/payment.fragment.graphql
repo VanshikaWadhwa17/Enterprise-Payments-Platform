@@ -1,0 +1,16 @@
+fragment PaymentFields on Payment {
+  id
+  amount {
+    amount
+    currency
+  }
+  status
+  beneficiary {
+    name
+    accountNumber
+    country
+  }
+  reference
+  createdAt
+  updatedAt
+}
