@@ -1,0 +1,37 @@
+type Query {
+    fraudCases: [FraudCase!]!
+    highRiskFraudCases: [FraudCase!]!
+    fraudCase(id: ID!): FraudCase
+}
+
+type Mutation {
+    investigateFraudCase(id: ID!): FraudCase!
+    approveFraudCase(id: ID!): FraudCase!
+    blockFraudCase(id: ID!): FraudCase!
+}
+
+type FraudCase {
+    id: ID!
+    paymentId: ID!
+    amount: Float!
+    currency: String!
+    beneficiaryName: String!
+    score: Int!
+    riskLevel: RiskLevel!
+    factors: [String!]!
+    status: FraudCaseStatus!
+    openedAt: String!
+}
+
+enum RiskLevel {
+    LOW
+    MEDIUM
+    HIGH
+}
+
+enum FraudCaseStatus {
+    OPEN
+    INVESTIGATING
+    CLEARED
+    CONFIRMED
+}

@@ -8,6 +8,7 @@ import com.example.payment.service.PaymentService;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Controller;
 
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentController {
 
     private final PaymentService paymentService;
@@ -32,12 +34,25 @@ public class PaymentController {
 
     @MutationMapping
     public Payment createPayment(@Argument CreatePaymentInput input) {
-        return paymentService.create(input);
+        long start = System.currentTimeMillis();
+        Payment payment = paymentService.create(input);
+        log.info(
+                "event=PaymentCreated status=SUCCESS paymentId={} duration={}ms",
+                payment.getId(),
+                System.currentTimeMillis() - start);
+        return payment;
     }
 
     @MutationMapping
     public Payment updatePaymentStatus(@Argument UUID id, @Argument PaymentStatus status) {
-        return paymentService.updateStatus(id, status);
+        long start = System.currentTimeMillis();
+        Payment payment = paymentService.updateStatus(id, status);
+        log.info(
+                "event=PaymentStatusChanged status=SUCCESS paymentId={} newStatus={} duration={}ms",
+                payment.getId(),
+                status,
+                System.currentTimeMillis() - start);
+        return payment;
     }
 
     @SchemaMapping(typeName = "Payment", field = "amount")

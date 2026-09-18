@@ -11,4 +11,5 @@ public record CreatePaymentInput(
         @NotNull Currency currency,
         @NotBlank String beneficiaryName,
         @NotBlank String beneficiaryAccountNumber,
-        @NotBlank String beneficiaryCountry) {}
+        @NotBlank String beneficiaryCountry,
+        String idempotencyKey) {}

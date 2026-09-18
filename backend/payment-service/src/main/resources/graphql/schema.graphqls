@@ -53,4 +53,5 @@ input CreatePaymentInput {
   beneficiaryName: String!
   beneficiaryAccountNumber: String!
   beneficiaryCountry: String!
+  idempotencyKey: String
 }
