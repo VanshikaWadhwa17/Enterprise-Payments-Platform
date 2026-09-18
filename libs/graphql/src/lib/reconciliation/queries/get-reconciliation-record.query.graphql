@@ -1,0 +1,5 @@
+query GetReconciliationRecord($id: ID!) {
+  reconciliationRecord(id: $id) {
+    ...ReconciliationRecordFields
+  }
+}

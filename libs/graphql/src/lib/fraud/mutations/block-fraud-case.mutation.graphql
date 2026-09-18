@@ -1,0 +1,5 @@
+mutation BlockFraudCase($id: ID!) {
+  blockFraudCase(id: $id) {
+    ...FraudCaseFields
+  }
+}

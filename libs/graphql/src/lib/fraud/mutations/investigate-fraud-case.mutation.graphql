@@ -1,0 +1,5 @@
+mutation InvestigateFraudCase($id: ID!) {
+  investigateFraudCase(id: $id) {
+    ...FraudCaseFields
+  }
+}

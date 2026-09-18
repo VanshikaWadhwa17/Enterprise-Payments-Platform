@@ -1,0 +1,18 @@
+<section class="fraud-list">
+  <header class="fraud-list__header">
+    <h2>Fraud cases</h2>
+  </header>
+
+  @if (loading()) {
+    <ui-spinner label="Loading fraud cases…" />
+  } @else if (error()) {
+    <ui-error-state [message]="error()!" (retry)="load()" />
+  } @else if (fraudCases().length === 0) {
+    <ui-empty-state
+      title="No fraud cases"
+      description="Cases created from incoming payments will show up here."
+    />
+  } @else {
+    <ui-table [rows]="fraudCases()" [columns]="columns" trackByKey="id" (rowClick)="openCase($event)" />
+  }
+</section>

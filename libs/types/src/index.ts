@@ -5,3 +5,4 @@ export * from './lib/transaction.types';
 export * from './lib/fraud.types';
 export * from './lib/api.types';
 export * from './lib/auth.types';
+export * from './lib/reconciliation.types';

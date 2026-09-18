@@ -1,0 +1,56 @@
+<section class="reconciliation-list">
+  <header class="reconciliation-list__header">
+    <h2>Reconciliation</h2>
+    <label class="reconciliation-list__filter">
+      <span>Filter</span>
+      <select (change)="onFilterChange($any($event.target).value)">
+        @for (filter of statusFilters; track filter.label) {
+          <option [value]="filter.value ?? ''">{{ filter.label }}</option>
+        }
+      </select>
+    </label>
+  </header>
+
+  @if (loading()) {
+    <ui-spinner label="Loading reconciliation records…" />
+  } @else if (error()) {
+    <ui-error-state [message]="error()!" (retry)="load()" />
+  } @else if (records().length === 0) {
+    <ui-empty-state
+      title="No records"
+      description="No reconciliation records match this filter."
+    />
+  } @else {
+    <ui-table
+      [rows]="records()"
+      [columns]="columns"
+      trackByKey="id"
+      (rowClick)="investigate($event)"
+    />
+    <p class="reconciliation-list__hint">Click a row to investigate.</p>
+  }
+
+  <ui-modal [open]="investigating() !== null" title="Investigate record" (closed)="closeInvestigation()">
+    @if (investigating(); as record) {
+      <dl class="reconciliation-list__details">
+        <dt>Payment</dt>
+        <dd>{{ record.paymentId }}</dd>
+
+        <dt>Bank amount</dt>
+        <dd>{{ record.bankAmount }} {{ record.currency }}</dd>
+
+        <dt>Processor amount</dt>
+        <dd>{{ record.processorAmount }} {{ record.currency }}</dd>
+
+        <dt>Settlement amount</dt>
+        <dd>{{ record.settlementAmount }} {{ record.currency }}</dd>
+
+        <dt>Result</dt>
+        <dd><ui-status-badge [status]="record.status" /></dd>
+
+        <dt>Reconciled at</dt>
+        <dd>{{ record.reconciledAt | date: 'medium' }}</dd>
+      </dl>
+    }
+  </ui-modal>
+</section>

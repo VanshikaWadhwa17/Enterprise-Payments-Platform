@@ -13,6 +13,8 @@ const VARIANT_BY_STATUS: Record<string, BadgeVariant> = {
   APPROVED: 'success',
   CLEARED: 'success',
   MATCH: 'success',
+  MATCHED: 'success',
+  LOW: 'success',
 
   PROCESSING: 'info',
   PENDING_APPROVAL: 'info',
@@ -22,12 +24,16 @@ const VARIANT_BY_STATUS: Record<string, BadgeVariant> = {
   CREATED: 'neutral',
   OPEN: 'neutral',
 
+  MEDIUM: 'warning',
+  DUPLICATE: 'warning',
+
   FAILED: 'danger',
   REJECTED: 'danger',
   CANCELLED: 'danger',
   MISSING: 'danger',
   MISMATCH: 'danger',
   CONFIRMED: 'danger',
+  HIGH: 'danger',
 };
 
 @Component({

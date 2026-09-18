@@ -1,20 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { map, type Observable } from 'rxjs';
-import type {
-  CreatePayment,
-  Currency,
-  Payment,
-  PaymentStatus,
-} from '@epp/types';
-import {
-  CreatePaymentGQL,
-  Currency as GqlCurrency,
-  GetPaymentGQL,
-  GetPaymentsGQL,
-  type PaymentFieldsFragment,
-} from '@epp/graphql';
+import type { CreatePayment, Currency, Payment, PaymentStatus } from '@epp/types';
+import { PaymentGraphQL } from '@epp/graphql';
 
-function toPayment(fragment: PaymentFieldsFragment): Payment {
+function toPayment(fragment: PaymentGraphQL.PaymentFieldsFragment): Payment {
   return {
     id: fragment.id,
     amount: {
@@ -35,9 +24,9 @@ function toPayment(fragment: PaymentFieldsFragment): Payment {
 
 @Injectable({ providedIn: 'root' })
 export class PaymentsService {
-  private readonly getPaymentsGQL = inject(GetPaymentsGQL);
-  private readonly getPaymentGQL = inject(GetPaymentGQL);
-  private readonly createPaymentGQL = inject(CreatePaymentGQL);
+  private readonly getPaymentsGQL = inject(PaymentGraphQL.GetPaymentsGQL);
+  private readonly getPaymentGQL = inject(PaymentGraphQL.GetPaymentGQL);
+  private readonly createPaymentGQL = inject(PaymentGraphQL.CreatePaymentGQL);
 
   getPayments(): Observable<Payment[]> {
     return this.getPaymentsGQL.fetch({ fetchPolicy: 'network-only' }).pipe(
@@ -51,13 +40,9 @@ export class PaymentsService {
   }
 
   getPayment(id: string): Observable<Payment | undefined> {
-    return this.getPaymentGQL
-      .fetch({ variables: { id }, fetchPolicy: 'network-only' })
-      .pipe(
-        map((result) =>
-          result.data?.payment ? toPayment(result.data.payment) : undefined,
-        ),
-      );
+    return this.getPaymentGQL.fetch({ variables: { id }, fetchPolicy: 'network-only' }).pipe(
+      map((result) => (result.data?.payment ? toPayment(result.data.payment) : undefined)),
+    );
   }
 
   createPayment(payload: CreatePayment): Observable<Payment> {
@@ -66,7 +51,7 @@ export class PaymentsService {
         variables: {
           input: {
             amount: payload.amount.amount,
-            currency: payload.amount.currency as string as GqlCurrency,
+            currency: payload.amount.currency as string as PaymentGraphQL.Currency,
             beneficiaryName: payload.beneficiary.name,
             beneficiaryAccountNumber: payload.beneficiary.accountNumber,
             beneficiaryCountry: payload.beneficiary.country,

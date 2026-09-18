@@ -1,0 +1,5 @@
+query GetFraudCase($id: ID!) {
+  fraudCase(id: $id) {
+    ...FraudCaseFields
+  }
+}

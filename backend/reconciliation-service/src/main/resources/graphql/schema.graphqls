@@ -1,0 +1,22 @@
+type Query {
+    reconciliationRecords(status: ReconciliationStatus): [ReconciliationRecord!]!
+    reconciliationRecord(id: ID!): ReconciliationRecord
+}
+
+type ReconciliationRecord {
+    id: ID!
+    paymentId: String!
+    bankAmount: Float!
+    processorAmount: Float!
+    settlementAmount: Float!
+    currency: String!
+    status: ReconciliationStatus!
+    reconciledAt: String!
+}
+
+enum ReconciliationStatus {
+    MATCHED
+    MISSING
+    MISMATCH
+    DUPLICATE
+}

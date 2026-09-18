@@ -1,0 +1,12 @@
+fragment FraudCaseFields on FraudCase {
+  id
+  paymentId
+  amount
+  currency
+  beneficiaryName
+  score
+  riskLevel
+  factors
+  status
+  openedAt
+}

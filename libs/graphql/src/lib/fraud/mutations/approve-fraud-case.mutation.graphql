@@ -1,0 +1,5 @@
+mutation ApproveFraudCase($id: ID!) {
+  approveFraudCase(id: $id) {
+    ...FraudCaseFields
+  }
+}

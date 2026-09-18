@@ -7,7 +7,7 @@ export default withNativeFederation({
   name: 'fraud',
 
   exposes: {
-    './Component': './apps/fraud/src/app/app.ts',
+    './Routes': './apps/fraud/src/app/app.routes.ts',
   },
 
   shared: {

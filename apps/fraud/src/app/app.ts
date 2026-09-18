@@ -4,9 +4,6 @@ import { RouterModule } from '@angular/router';
 @Component({
   imports: [RouterModule],
   selector: 'epp-root',
-  templateUrl: './app.html',
-  styleUrl: './app.scss',
+  template: '<router-outlet></router-outlet>',
 })
-export class App {
-  protected title = 'Fraud';
-}
+export class App {}

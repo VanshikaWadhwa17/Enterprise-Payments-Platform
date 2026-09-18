@@ -1,0 +1,10 @@
+fragment ReconciliationRecordFields on ReconciliationRecord {
+  id
+  paymentId
+  bankAmount
+  processorAmount
+  settlementAmount
+  currency
+  status
+  reconciledAt
+}

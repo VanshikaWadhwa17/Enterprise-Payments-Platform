@@ -7,7 +7,7 @@ export default withNativeFederation({
   name: 'reconciliation',
 
   exposes: {
-    './Component': './apps/reconciliation/src/app/app.ts',
+    './Routes': './apps/reconciliation/src/app/app.routes.ts',
   },
 
   shared: {

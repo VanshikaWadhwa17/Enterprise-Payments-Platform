@@ -14,13 +14,13 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'fraud',
-    loadComponent: () =>
-      loadRemoteModule('fraud', './Component').then((m) => m.App),
+    loadChildren: () =>
+      loadRemoteModule('fraud', './Routes').then((m) => m.appRoutes),
   },
   {
     path: 'reconciliation',
-    loadComponent: () =>
-      loadRemoteModule('reconciliation', './Component').then((m) => m.App),
+    loadChildren: () =>
+      loadRemoteModule('reconciliation', './Routes').then((m) => m.appRoutes),
   },
   {
     path: 'reports',

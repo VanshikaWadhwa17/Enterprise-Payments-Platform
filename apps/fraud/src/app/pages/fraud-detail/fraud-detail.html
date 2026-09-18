@@ -1,0 +1,47 @@
+<section class="fraud-detail">
+  <ui-button variant="ghost" (clicked)="back()">&larr; Back to fraud cases</ui-button>
+
+  @if (loading()) {
+    <p>Loading…</p>
+  } @else if (fraudCase(); as fraudCase) {
+    <ui-card [title]="'Payment ' + fraudCase.paymentId">
+      <dl class="fraud-detail__fields">
+        <dt>Amount</dt>
+        <dd>{{ formatMoney(fraudCase.amount, fraudCase.currency) }}</dd>
+
+        <dt>Beneficiary</dt>
+        <dd>{{ fraudCase.beneficiaryName }}</dd>
+
+        <dt>Risk score</dt>
+        <dd>{{ fraudCase.score }}</dd>
+
+        <dt>Risk</dt>
+        <dd><ui-status-badge [status]="fraudCase.riskLevel" /></dd>
+
+        <dt>Status</dt>
+        <dd><ui-status-badge [status]="fraudCase.status" /></dd>
+      </dl>
+
+      <h3 class="fraud-detail__factors-title">Risk factors</h3>
+      @if (fraudCase.factors.length === 0) {
+        <p class="fraud-detail__no-factors">No risk factors detected.</p>
+      } @else {
+        <ul class="fraud-detail__factors">
+          @for (factor of fraudCase.factors; track factor) {
+            <li>{{ factor }} <span aria-hidden="true">✓</span></li>
+          }
+        </ul>
+      }
+
+      <div class="fraud-detail__actions">
+        <ui-button variant="secondary" [loading]="actioning()" (clicked)="investigate()">
+          Investigate
+        </ui-button>
+        <ui-button variant="danger" [loading]="actioning()" (clicked)="block()">Block</ui-button>
+        <ui-button variant="primary" [loading]="actioning()" (clicked)="approve()">Approve</ui-button>
+      </div>
+    </ui-card>
+  } @else {
+    <p>Fraud case not found.</p>
+  }
+</section>

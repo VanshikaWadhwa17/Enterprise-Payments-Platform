@@ -1,7 +1,5 @@
 export type TransactionType = 'DEBIT' | 'CREDIT';
 
-export type ReconciliationResult = 'MATCH' | 'MISSING' | 'MISMATCH';
-
 export interface Transaction {
   id: string;
   paymentId: string;
@@ -9,5 +7,4 @@ export interface Transaction {
   amount: number;
   currency: string;
   settledAt?: string;
-  reconciliation?: ReconciliationResult;
 }

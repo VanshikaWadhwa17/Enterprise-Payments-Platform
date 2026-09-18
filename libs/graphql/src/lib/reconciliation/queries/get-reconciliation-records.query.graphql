@@ -1,0 +1,5 @@
+query GetReconciliationRecords($status: ReconciliationStatus) {
+  reconciliationRecords(status: $status) {
+    ...ReconciliationRecordFields
+  }
+}
