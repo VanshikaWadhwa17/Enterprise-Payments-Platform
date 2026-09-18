@@ -1,0 +1,21 @@
+type Query {
+    accounts: [Account!]!
+    account(id: ID!): Account
+    accountByNumber(accountNumber: String!): Account
+}
+
+type Account {
+    id: ID!
+    accountNumber: String!
+    ownerName: String!
+    status: AccountStatus!
+    balance: Float!
+    currency: String!
+}
+
+enum AccountStatus {
+    ACTIVE
+    DORMANT
+    CLOSED
+    FROZEN
+}
