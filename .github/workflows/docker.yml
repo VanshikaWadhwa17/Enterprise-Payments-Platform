@@ -1,0 +1,66 @@
+name: Docker
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build all images
+        run: docker compose build
+
+      - name: Start the full stack
+        run: docker compose up -d
+
+      - name: Wait for backend services to become healthy
+        run: |
+          for port in 8080 8081 8082 8083 8084 8085; do
+            echo "Waiting for service on port $port..."
+            for i in $(seq 1 30); do
+              if curl -sf "http://localhost:$port/actuator/health" > /dev/null; then
+                echo "Port $port is healthy"
+                break
+              fi
+              if [ "$i" -eq 30 ]; then
+                echo "Service on port $port did not become healthy in time"
+                exit 1
+              fi
+              sleep 2
+            done
+          done
+
+      - name: Smoke test GraphQL endpoints
+        run: |
+          set -e
+          curl -sf -X POST http://localhost:8080/graphql -H "Content-Type: application/json" \
+            -d '{"query":"query{payments{id}}"}' | grep -q '"data"'
+          curl -sf -X POST http://localhost:8081/graphql -H "Content-Type: application/json" \
+            -d '{"query":"query{accounts{id}}"}' | grep -q '"data"'
+          curl -sf -X POST http://localhost:8082/graphql -H "Content-Type: application/json" \
+            -d '{"query":"query{fraudCases{id}}"}' | grep -q '"data"'
+          curl -sf -X POST http://localhost:8085/graphql -H "Content-Type: application/json" \
+            -d '{"query":"query{reconciliationRecords{id}}"}' | grep -q '"data"'
+
+      - name: Smoke test frontend
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:4200 > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Shell did not come up in time"
+          exit 1
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
