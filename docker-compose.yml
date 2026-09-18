@@ -10,11 +10,42 @@ services:
       - '${DB_PORT:-5433}:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres-init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-payments}']
       interval: 5s
       timeout: 5s
       retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: epp-redis
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: epp-kafka
+    ports:
+      - '${KAFKA_PORT:-9092}:9092'
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://kafka:19092,CONTROLLER://kafka:19093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:19092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:19093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+  # --- Backend services -----------------------------------------------
 
   payment-service:
     build:
@@ -23,16 +54,153 @@ services:
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: ${DB_NAME:-payments}
+      DB_NAME: payments
       DB_USER: ${DB_USER:-payments}
       DB_PASSWORD: ${DB_PASSWORD:-payments}
-      SERVER_PORT: 8080
+      KAFKA_BROKERS: kafka:19092
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200,http://localhost:4201}
     ports:
-      - '${API_PORT:-8080}:8080'
+      - '${PAYMENT_SERVICE_PORT:-8080}:8080'
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  account-service:
+    build:
+      context: ./backend/account-service
+    container_name: epp-account-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: accounts
+      DB_USER: accounts
+      DB_PASSWORD: accounts
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200,http://localhost:4201}
+    ports:
+      - '${ACCOUNT_SERVICE_PORT:-8081}:8081'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  fraud-service:
+    build:
+      context: ./backend/fraud-service
+    container_name: epp-fraud-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: fraud
+      DB_USER: fraud
+      DB_PASSWORD: fraud
+      KAFKA_BROKERS: kafka:19092
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200,http://localhost:4202}
+    ports:
+      - '${FRAUD_SERVICE_PORT:-8082}:8082'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  notification-service:
+    build:
+      context: ./backend/notification-service
+    container_name: epp-notification-service
+    environment:
+      KAFKA_BROKERS: kafka:19092
+    ports:
+      - '${NOTIFICATION_SERVICE_PORT:-8083}:8083'
+    depends_on:
+      kafka:
+        condition: service_started
+
+  audit-service:
+    build:
+      context: ./backend/audit-service
+    container_name: epp-audit-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: audit
+      DB_USER: audit
+      DB_PASSWORD: audit
+      KAFKA_BROKERS: kafka:19092
+    ports:
+      - '${AUDIT_SERVICE_PORT:-8084}:8084'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  reconciliation-service:
+    build:
+      context: ./backend/reconciliation-service
+    container_name: epp-reconciliation-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: reconciliation
+      DB_USER: reconciliation
+      DB_PASSWORD: reconciliation
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200,http://localhost:4203}
+    ports:
+      - '${RECONCILIATION_SERVICE_PORT:-8085}:8085'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # --- Frontend (Angular shell + MFEs) ---------------------------------
+
+  shell:
+    build:
+      context: .
+      dockerfile: infra/angular.Dockerfile
+      args:
+        APP_NAME: shell
+    container_name: epp-shell
+    ports:
+      - '4200:80'
+
+  payments:
+    build:
+      context: .
+      dockerfile: infra/angular.Dockerfile
+      args:
+        APP_NAME: payments
+    container_name: epp-payments
+    ports:
+      - '4201:80'
+
+  fraud:
+    build:
+      context: .
+      dockerfile: infra/angular.Dockerfile
+      args:
+        APP_NAME: fraud
+    container_name: epp-fraud
+    ports:
+      - '4202:80'
+
+  reconciliation:
+    build:
+      context: .
+      dockerfile: infra/angular.Dockerfile
+      args:
+        APP_NAME: reconciliation
+    container_name: epp-reconciliation
+    ports:
+      - '4203:80'
 
 volumes:
   postgres-data:
