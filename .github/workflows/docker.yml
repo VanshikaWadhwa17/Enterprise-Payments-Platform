@@ -41,36 +41,53 @@ jobs:
 
       - name: Log in and capture auth cookies
         run: |
-          set -e
-          # auth-service's /actuator/health can report UP before its
-          # DataSeeder (bcrypt-hashing 5 demo passwords) finishes writing
-          # the seeded users, so retry rather than assume the first attempt
-          # after a healthy check lands after seeding completes.
+          # No `set -e` here on purpose -- every call's status/body is
+          # checked and echoed explicitly so a failure is diagnosable from
+          # the public Annotations panel alone.
           login_ok=false
           for i in $(seq 1 15); do
             http_code=$(curl -s -o response.txt -w "%{http_code}" -c cookies.txt -b cookies.txt \
               -X POST http://localhost:8086/api/auth/login \
               -H "Content-Type: application/json" \
               -d '{"email":"erin@epp.dev","password":"Passw0rd!"}')
+            echo "Login attempt $i: HTTP $http_code, body: $(cat response.txt)"
             if [ "$http_code" = "200" ]; then
               login_ok=true
               break
             fi
-            echo "Login attempt $i got HTTP $http_code, retrying... body: $(cat response.txt)"
             sleep 2
           done
           if [ "$login_ok" != true ]; then
-            echo "::error::Login never succeeded. Last HTTP status: $http_code, body: $(cat response.txt)"
-            echo "--- auth-service logs ---"
-            docker compose logs auth-service --tail=100
+            echo "::error::Login never returned HTTP 200 after 15 attempts. Last: $http_code $(cat response.txt)"
+            docker compose logs auth-service --tail=100 || true
             exit 1
           fi
+
+          echo "--- cookies.txt after login ---"
+          cat cookies.txt
+
           # login alone only sets epp_token; XSRF-TOKEN is seeded by the next
           # authenticated request, same as the frontend's refreshSession()
           # bootstrap call.
-          curl -sf -c cookies.txt -b cookies.txt http://localhost:8086/api/auth/me > /dev/null
-          grep -q epp_token cookies.txt
-          grep -q XSRF-TOKEN cookies.txt
+          me_code=$(curl -s -o me_response.txt -w "%{http_code}" -c cookies.txt -b cookies.txt \
+            http://localhost:8086/api/auth/me)
+          echo "GET /me: HTTP $me_code, body: $(cat me_response.txt)"
+          echo "--- cookies.txt after /me ---"
+          cat cookies.txt
+
+          if [ "$me_code" != "200" ]; then
+            echo "::error::GET /me returned HTTP $me_code, body: $(cat me_response.txt)"
+            docker compose logs auth-service --tail=100 || true
+            exit 1
+          fi
+          if ! grep -q epp_token cookies.txt; then
+            echo "::error::epp_token cookie missing after login"
+            exit 1
+          fi
+          if ! grep -q XSRF-TOKEN cookies.txt; then
+            echo "::error::XSRF-TOKEN cookie missing after /me"
+            exit 1
+          fi
 
       - name: Smoke test GraphQL endpoints
         run: |
