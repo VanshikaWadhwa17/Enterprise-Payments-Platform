@@ -42,9 +42,25 @@ jobs:
       - name: Log in and capture auth cookies
         run: |
           set -e
-          curl -sf -c cookies.txt -b cookies.txt -X POST http://localhost:8086/api/auth/login \
-            -H "Content-Type: application/json" \
-            -d '{"email":"erin@epp.dev","password":"Passw0rd!"}' > /dev/null
+          # auth-service's /actuator/health can report UP before its
+          # DataSeeder (bcrypt-hashing 5 demo passwords) finishes writing
+          # the seeded users, so retry rather than assume the first attempt
+          # after a healthy check lands after seeding completes.
+          login_ok=false
+          for i in $(seq 1 15); do
+            if curl -sf -c cookies.txt -b cookies.txt -X POST http://localhost:8086/api/auth/login \
+              -H "Content-Type: application/json" \
+              -d '{"email":"erin@epp.dev","password":"Passw0rd!"}' > /dev/null; then
+              login_ok=true
+              break
+            fi
+            echo "Login not ready yet, retrying..."
+            sleep 2
+          done
+          if [ "$login_ok" != true ]; then
+            echo "Login never succeeded"
+            exit 1
+          fi
           # login alone only sets epp_token; XSRF-TOKEN is seeded by the next
           # authenticated request, same as the frontend's refreshSession()
           # bootstrap call.
