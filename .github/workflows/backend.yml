@@ -78,6 +78,14 @@ jobs:
           cache: maven
           cache-dependency-path: backend/${{ matrix.service }}/pom.xml
 
+      - name: Generate a CI-only JWT secret
+        # payment/fraud/reconciliation-service refuse to boot without this
+        # (see application.properties: app.jwt.secret=${AUTH_JWT_SECRET:}).
+        # Must land in jjwt's 32-47 byte HS256 bucket -- see docker.yml for
+        # the full explanation of why an arbitrary-length secret breaks
+        # every service's HS256-only JwtDecoder.
+        run: echo "AUTH_JWT_SECRET=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+
       - name: Test ${{ matrix.service }}
         working-directory: backend/${{ matrix.service }}
         run: ./mvnw -B test
