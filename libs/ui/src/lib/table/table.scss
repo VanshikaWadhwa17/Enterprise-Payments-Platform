@@ -5,15 +5,15 @@
 
   th {
     text-align: left;
-    padding: 0.6rem 0.9rem;
-    border-bottom: 2px solid #e2e8f0;
-    color: #475569;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 2px solid var(--color-border);
+    color: var(--color-text-secondary);
     font-weight: 600;
   }
 
   td {
-    padding: 0.6rem 0.9rem;
-    border-bottom: 1px solid #e2e8f0;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
   }
 }
 
@@ -22,10 +22,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+.ui-table__cell--actions {
+  text-align: right;
+  cursor: default;
+  white-space: nowrap;
+}
+
 .ui-table__row {
   cursor: pointer;
 
   &:hover {
-    background-color: #f8fafc;
+    background-color: var(--color-surface-hover);
   }
 }

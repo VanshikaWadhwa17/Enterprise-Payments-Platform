@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { DatePipe } from '@angular/common';
 import type { Currency, ReconciliationRecord, ReconciliationStatus } from '@epp/types';
 import { formatMoney } from '@epp/utils';
-import { EmptyState, ErrorState, Modal, Spinner, StatusBadge, Table, type TableColumn } from '@epp/ui';
+import { Button, EmptyState, ErrorState, Modal, Spinner, StatusBadge, Table, type TableColumn } from '@epp/ui';
 import { ReconciliationService } from '../../services/reconciliation.service';
 
 const STATUS_FILTERS: Array<{ label: string; value: ReconciliationStatus | undefined }> = [
@@ -39,7 +39,7 @@ const COLUMNS: TableColumn<ReconciliationRecord>[] = [
 @Component({
   selector: 'epp-reconciliation-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Table, Spinner, EmptyState, ErrorState, Modal, StatusBadge, DatePipe],
+  imports: [Table, Spinner, EmptyState, ErrorState, Modal, StatusBadge, DatePipe, Button],
   templateUrl: './reconciliation-list.html',
   styleUrl: './reconciliation-list.scss',
 })

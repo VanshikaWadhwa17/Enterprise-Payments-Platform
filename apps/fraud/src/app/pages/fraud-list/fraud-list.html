@@ -13,6 +13,16 @@
       description="Cases created from incoming payments will show up here."
     />
   } @else {
-    <ui-table [rows]="fraudCases()" [columns]="columns" trackByKey="id" (rowClick)="openCase($event)" />
+    <ui-table
+      [rows]="fraudCases()"
+      [columns]="columns"
+      trackByKey="id"
+      (rowClick)="openCase($event)"
+      [rowActions]="rowActions"
+    >
+      <ng-template #rowActions let-fraudCase>
+        <ui-button variant="ghost" (clicked)="openCase(fraudCase)">View</ui-button>
+      </ng-template>
+    </ui-table>
   }
 </section>

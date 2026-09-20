@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { ActivatedRoute, Router } from '@angular/router';
 import type { Currency, FraudCase } from '@epp/types';
 import { formatMoney } from '@epp/utils';
-import { EmptyState, ErrorState, Spinner, Table, type TableColumn } from '@epp/ui';
+import { Button, EmptyState, ErrorState, Spinner, Table, type TableColumn } from '@epp/ui';
 import { FraudService } from '../../services/fraud.service';
 
 const COLUMNS: TableColumn<FraudCase>[] = [
@@ -22,7 +22,7 @@ const COLUMNS: TableColumn<FraudCase>[] = [
 @Component({
   selector: 'epp-fraud-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Table, Spinner, EmptyState, ErrorState],
+  imports: [Table, Spinner, EmptyState, ErrorState, Button],
   templateUrl: './fraud-list.html',
   styleUrl: './fraud-list.scss',
 })

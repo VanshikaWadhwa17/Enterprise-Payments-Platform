@@ -26,8 +26,12 @@
       [columns]="columns"
       trackByKey="id"
       (rowClick)="investigate($event)"
-    />
-    <p class="reconciliation-list__hint">Click a row to investigate.</p>
+      [rowActions]="rowActions"
+    >
+      <ng-template #rowActions let-record>
+        <ui-button variant="ghost" (clicked)="investigate(record)">View</ui-button>
+      </ng-template>
+    </ui-table>
   }
 
   <ui-modal [open]="investigating() !== null" title="Investigate record" (closed)="closeInvestigation()">

@@ -1,16 +1,57 @@
 <section class="dashboard">
-  <h2 class="dashboard__greeting">
-    Welcome back, {{ currentUser()?.fullName }}
-  </h2>
+  <h2 class="dashboard__greeting">{{ greeting() }}</h2>
   <p class="dashboard__role">{{ currentUser()?.role }}</p>
 
-  <div class="dashboard__grid">
-    @for (link of quickLinks(); track link.path) {
-    <a class="dashboard__link" [routerLink]="link.path">
-      <ui-card [title]="link.label">
-        <p>{{ link.description }}</p>
-      </ui-card>
-    </a>
-    }
+  @if (canViewPayments() || canViewFraud()) {
+  <h3 class="dashboard__section-title">Operations overview</h3>
+
+  <div class="dashboard__kpi-row">
+    @if (canViewPayments()) { @if (paymentsLoading()) {
+    <ui-spinner label="Loading payment metrics…" />
+    } @else if (paymentsError()) {
+    <ui-error-state [message]="paymentsError()!" (retry)="loadPayments()" />
+    } @else {
+    <ui-stat-tile
+      label="Payment Volume"
+      [value]="paymentVolumeDisplay()"
+      [sublabel]="paymentVolumeTrend()?.text"
+      [trend]="paymentVolumeTrend()?.trend"
+    />
+    <ui-stat-tile
+      label="Pending"
+      [value]="pendingDisplay()"
+      [sublabel]="inProgressSublabel()"
+    />
+    } } @if (canViewFraud()) { @if (fraudLoading()) {
+    <ui-spinner label="Loading fraud metrics…" />
+    } @else if (fraudError()) {
+    <ui-error-state [message]="fraudError()!" (retry)="loadFraud()" />
+    } @else {
+    <ui-stat-tile
+      label="Fraud Alerts"
+      [value]="fraudAlertsDisplay()"
+      [sublabel]="fraudSublabel()"
+    />
+    } }
   </div>
+  } @if (canViewPayments()) {
+  <h3 class="dashboard__section-title">Recent Payments</h3>
+
+  @if (paymentsLoading()) {
+  <ui-spinner label="Loading recent payments…" />
+  } @else if (paymentsError()) {
+  <ui-error-state [message]="paymentsError()!" (retry)="loadPayments()" />
+  } @else if (recentPayments().length === 0) {
+  <ui-empty-state
+    title="No payments yet"
+    description="Payments you create will show up here."
+  />
+  } @else {
+  <ui-table
+    [rows]="recentPayments()"
+    [columns]="recentPaymentsColumns"
+    trackByKey="id"
+    (rowClick)="openPayment($event)"
+  />
+  } }
 </section>

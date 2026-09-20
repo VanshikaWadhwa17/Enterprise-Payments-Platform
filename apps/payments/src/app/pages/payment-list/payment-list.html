@@ -23,6 +23,13 @@
     [columns]="columns"
     trackByKey="id"
     (rowClick)="openPayment($event)"
-  />
+    [rowActions]="rowActions"
+  >
+    <ng-template #rowActions let-payment>
+      <ui-button variant="ghost" (clicked)="openPayment(payment)"
+        >View</ui-button
+      >
+    </ng-template>
+  </ui-table>
   }
 </section>

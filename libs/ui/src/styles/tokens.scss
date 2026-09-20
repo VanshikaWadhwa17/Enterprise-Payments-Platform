@@ -1,0 +1,79 @@
+// Design tokens for the Enterprise Payments Platform.
+// Formalizes the palette/spacing/radius/shadow values already in use across
+// libs/ui and the shell/MFE apps -- no new colors introduced here, only
+// named custom properties for the hex values that were previously
+// hardcoded per-component.
+//
+// This file has no Sass variables/mixins, only plain CSS -- @use-ing it
+// from an app's global styles.scss emits these rules once, and the custom
+// properties then cascade to every component in that app regardless of
+// Angular's emulated view encapsulation.
+
+:root {
+  // Primary brand
+  --color-primary: #04208f;
+  --color-primary-hover: #031968;
+  --color-primary-subtle-bg: #eef1fb;
+
+  // Semantic status colors (mirrors StatusBadge's VARIANT_BY_STATUS map)
+  --color-success: #166534;
+  --color-success-bg: #dcfce7;
+  --color-info: #04208f;
+  --color-info-bg: #dbeafe;
+  --color-warning: #92400e;
+  --color-warning-bg: #fef3c7;
+  --color-danger: #991b1b;
+  --color-danger-bg: #fee2e2;
+  --color-danger-solid: #dc2626;
+  --color-danger-solid-hover: #b91c1c;
+  --color-neutral-bg: #e2e8f0;
+  --color-neutral-text: #334155;
+
+  // Borders
+  --color-border: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+  --color-border-hover: #94a3b8;
+
+  // Text
+  --color-text: #1e293b;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+
+  // Surfaces
+  --color-surface: #fff;
+  --color-surface-hover: #f8fafc;
+  --color-surface-subtle: #f1f5f9;
+  --color-bg-page: #f8fafc;
+
+  // Spacing (--space-N = N * 0.25rem)
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  // Radius
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-full: 999px;
+
+  // Shadow (reuses the same rgba(15, 23, 42, *) base already used by the modal)
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 20px 40px rgba(15, 23, 42, 0.2);
+
+  // Typography
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-bg-page);
+}

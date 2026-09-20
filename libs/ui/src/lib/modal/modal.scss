@@ -9,21 +9,21 @@
 }
 
 .ui-modal {
-  background-color: #fff;
-  border-radius: 8px;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-md);
   min-width: 320px;
   max-width: 90vw;
   max-height: 90vh;
   overflow: auto;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .ui-modal__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid #e2e8f0;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
 
   h3 {
     margin: 0;
@@ -37,9 +37,9 @@
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
-  color: #64748b;
+  color: var(--color-text-muted);
 }
 
 .ui-modal__body {
-  padding: 1.25rem;
+  padding: var(--space-5);
 }

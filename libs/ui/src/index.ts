@@ -7,3 +7,4 @@ export * from './lib/badge/status-badge';
 export * from './lib/spinner/spinner';
 export * from './lib/empty-state/empty-state';
 export * from './lib/error-state/error-state';
+export * from './lib/stat-tile/stat-tile';

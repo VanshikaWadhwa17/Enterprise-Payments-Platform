@@ -1,0 +1,14 @@
+<div class="ui-stat-tile">
+  <p class="ui-stat-tile__label">{{ label() }}</p>
+  <p class="ui-stat-tile__value">{{ value() }}</p>
+  @if (sublabel()) {
+  <p
+    class="ui-stat-tile__sublabel"
+    [class.ui-stat-tile__sublabel--up]="trend() === 'up'"
+    [class.ui-stat-tile__sublabel--down]="trend() === 'down'"
+  >
+    @if (trend() === 'up') { ↑ } @else if (trend() === 'down') { ↓ }
+    {{ sublabel() }}
+  </p>
+  }
+</div>

@@ -4,6 +4,9 @@
       @for (column of columns(); track column.key) {
       <th>{{ column.label }}</th>
       }
+      @if (rowActions()) {
+      <th>Actions</th>
+      }
     </tr>
   </thead>
   <tbody>
@@ -14,6 +17,11 @@
         @switch (column.cellType ?? 'text') { @case ('badge') {
         <ui-status-badge [status]="cellStatus(column, row)" />
         } @default { {{ cellValue(column, row) }} } }
+      </td>
+      }
+      @if (rowActions(); as actions) {
+      <td class="ui-table__cell--actions" (click)="$event.stopPropagation()">
+        <ng-container *ngTemplateOutlet="actions; context: { $implicit: row }" />
       </td>
       }
     </tr>

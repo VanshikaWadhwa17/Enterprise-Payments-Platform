@@ -3,30 +3,22 @@
 }
 
 .dashboard__role {
-  margin: 0 0 1.5rem;
-  color: #64748b;
+  margin: 0 0 var(--space-6);
+  color: var(--color-text-muted);
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
-.dashboard__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1rem;
+.dashboard__section-title {
+  margin: 0 0 var(--space-4);
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
 }
 
-.dashboard__link {
-  color: inherit;
-  text-decoration: none;
-
-  &:hover ui-card {
-    border-color: #04208f;
-  }
-
-  p {
-    margin: 0;
-    color: #64748b;
-    font-size: 0.85rem;
-  }
+.dashboard__kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
 }

@@ -1,8 +1,10 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   input,
   output,
+  type TemplateRef,
 } from '@angular/core';
 import { StatusBadge } from '../badge/status-badge';
 import type { TableColumn } from './table.types';
@@ -10,7 +12,7 @@ import type { TableColumn } from './table.types';
 @Component({
   selector: 'ui-table',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatusBadge],
+  imports: [StatusBadge, NgTemplateOutlet],
   templateUrl: './table.html',
   styleUrl: './table.scss',
 })
@@ -18,6 +20,7 @@ export class Table<T extends object> {
   readonly rows = input.required<T[]>();
   readonly columns = input.required<TableColumn<T>[]>();
   readonly trackByKey = input<keyof T>();
+  readonly rowActions = input<TemplateRef<{ $implicit: T }>>();
 
   readonly rowClick = output<T>();
 
