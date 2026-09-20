@@ -1,9 +1,11 @@
 <section class="payment-list">
   <header class="payment-list__header">
     <h2>Payments</h2>
+    @if (canCreate()) {
     <ui-button variant="primary" (clicked)="createPayment()"
       >Create payment</ui-button
     >
+    }
   </header>
 
   @if (loading()) {

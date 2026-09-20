@@ -4,58 +4,56 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Router } from '@angular/router';
-import type { Role } from '@epp/types';
+import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '@epp/auth';
 import { Button, Card } from '@epp/ui';
-
-interface DemoUser {
-  username: string;
-  role: Role;
-  description: string;
-}
-
-const DEMO_USERS: DemoUser[] = [
-  { username: 'alice', role: 'MAKER', description: 'Creates payments' },
-  {
-    username: 'bob',
-    role: 'CHECKER',
-    description: 'Approves or rejects payments',
-  },
-  { username: 'carol', role: 'ADMIN', description: 'Full access' },
-  {
-    username: 'dave',
-    role: 'OPERATIONS',
-    description: 'Investigates and reconciles',
-  },
-];
 
 @Component({
   selector: 'epp-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Card, Button],
+  imports: [ReactiveFormsModule, RouterModule, Card, Button],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
 export class Login {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly formBuilder = inject(FormBuilder);
 
-  readonly demoUsers = DEMO_USERS;
-  readonly selectedUsername = signal(DEMO_USERS[0].username);
+  readonly submitting = signal(false);
+  readonly errorMessage = signal<string | null>(null);
 
-  select(username: string): void {
-    this.selectedUsername.set(username);
-  }
+  readonly form = this.formBuilder.nonNullable.group({
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', Validators.required],
+  });
 
-  login(): void {
-    const demoUser = this.demoUsers.find(
-      (u) => u.username === this.selectedUsername(),
-    );
-    if (!demoUser) {
+  submit(): void {
+    if (this.form.invalid || this.submitting()) {
+      this.form.markAllAsTouched();
       return;
     }
-    this.authService.login(demoUser.username, demoUser.role);
-    this.router.navigateByUrl('/');
+
+    this.submitting.set(true);
+    this.errorMessage.set(null);
+
+    const { email, password } = this.form.getRawValue();
+    this.authService.login(email, password).subscribe({
+      next: () => {
+        const returnUrl =
+          this.route.snapshot.queryParamMap.get('returnUrl') ?? '/dashboard';
+        this.router.navigateByUrl(returnUrl);
+      },
+      error: () => {
+        this.submitting.set(false);
+        this.errorMessage.set('Incorrect email or password.');
+      },
+    });
   }
 }

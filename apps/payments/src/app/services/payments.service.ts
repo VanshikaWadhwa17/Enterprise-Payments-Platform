@@ -27,6 +27,9 @@ export class PaymentsService {
   private readonly getPaymentsGQL = inject(PaymentGraphQL.GetPaymentsGQL);
   private readonly getPaymentGQL = inject(PaymentGraphQL.GetPaymentGQL);
   private readonly createPaymentGQL = inject(PaymentGraphQL.CreatePaymentGQL);
+  private readonly updatePaymentStatusGQL = inject(
+    PaymentGraphQL.UpdatePaymentStatusGQL,
+  );
 
   getPayments(): Observable<Payment[]> {
     return this.getPaymentsGQL.fetch({ fetchPolicy: 'network-only' }).pipe(
@@ -64,6 +67,21 @@ export class PaymentsService {
             throw new Error('createPayment returned no data');
           }
           return toPayment(result.data.createPayment);
+        }),
+      );
+  }
+
+  updateStatus(id: string, status: PaymentStatus): Observable<Payment> {
+    return this.updatePaymentStatusGQL
+      .mutate({
+        variables: { id, status: status as string as PaymentGraphQL.PaymentStatus },
+      })
+      .pipe(
+        map((result) => {
+          if (!result.data) {
+            throw new Error('updatePaymentStatus returned no data');
+          }
+          return toPayment(result.data.updatePaymentStatus);
         }),
       );
   }

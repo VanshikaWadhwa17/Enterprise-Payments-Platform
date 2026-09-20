@@ -1,4 +1,5 @@
 import { Route } from '@angular/router';
+import { permissionGuard } from '@epp/auth';
 
 export const appRoutes: Route[] = [
   {
@@ -8,6 +9,8 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'create',
+    canActivate: [permissionGuard],
+    data: { permission: 'PAYMENT_CREATE' },
     loadComponent: () =>
       import('./pages/payment-create/payment-create').then(
         (m) => m.PaymentCreate,

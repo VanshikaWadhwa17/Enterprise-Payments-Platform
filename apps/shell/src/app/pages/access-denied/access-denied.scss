@@ -1,0 +1,15 @@
+.access-denied {
+  max-width: 480px;
+  margin: 3rem auto;
+  text-align: center;
+
+  a {
+    color: #04208f;
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

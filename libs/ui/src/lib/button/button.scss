@@ -18,11 +18,11 @@
   }
 
   &--primary {
-    background-color: #1d4ed8;
+    background-color: #04208f;
     color: #fff;
 
     &:hover:not(:disabled) {
-      background-color: #1e40af;
+      background-color: #031968;
     }
   }
 
@@ -46,11 +46,11 @@
 
   &--ghost {
     background-color: transparent;
-    color: #1d4ed8;
-    border-color: #1d4ed8;
+    color: #04208f;
+    border-color: #04208f;
 
     &:hover:not(:disabled) {
-      background-color: #eff6ff;
+      background-color: #eef1fb;
     }
   }
 }

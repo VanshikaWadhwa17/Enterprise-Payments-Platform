@@ -1,0 +1,20 @@
+.settings {
+  max-width: 480px;
+}
+
+.settings__list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+  margin: 0;
+
+  dt {
+    color: #64748b;
+    font-size: 0.85rem;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+  }
+}

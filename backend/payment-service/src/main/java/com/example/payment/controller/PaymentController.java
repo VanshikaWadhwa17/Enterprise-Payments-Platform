@@ -13,6 +13,7 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 
 @Controller
@@ -23,16 +24,19 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @QueryMapping
+    @PreAuthorize("hasAuthority('PAYMENT_VIEW')")
     public List<Payment> payments() {
         return paymentService.findAll();
     }
 
     @QueryMapping
+    @PreAuthorize("hasAuthority('PAYMENT_VIEW')")
     public Payment payment(@Argument UUID id) {
         return paymentService.findById(id);
     }
 
     @MutationMapping
+    @PreAuthorize("hasAuthority('PAYMENT_CREATE')")
     public Payment createPayment(@Argument CreatePaymentInput input) {
         long start = System.currentTimeMillis();
         Payment payment = paymentService.create(input);
@@ -44,6 +48,7 @@ public class PaymentController {
     }
 
     @MutationMapping
+    @PreAuthorize("hasAnyAuthority('PAYMENT_APPROVE', 'PAYMENT_CANCEL')")
     public Payment updatePaymentStatus(@Argument UUID id, @Argument PaymentStatus status) {
         long start = System.currentTimeMillis();
         Payment payment = paymentService.updateStatus(id, status);

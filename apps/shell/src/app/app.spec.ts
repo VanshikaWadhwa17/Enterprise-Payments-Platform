@@ -10,12 +10,10 @@ describe('App', () => {
     }).compileComponents();
   });
 
-  it('should render the shell title', async () => {
+  it('should render a router outlet', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain(
-      'Enterprise Payments Platform',
-    );
+    expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 });

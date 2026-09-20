@@ -1,0 +1,76 @@
+.shell-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+
+  h1 {
+    font-size: 1.1rem;
+    margin: 0;
+  }
+
+  nav {
+    display: flex;
+    gap: 1rem;
+    flex: 1;
+
+    a {
+      color: #04208f;
+      text-decoration: none;
+      padding-bottom: 0.2rem;
+      border-bottom: 2px solid transparent;
+      transition: border-color 0.15s ease;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    a.active {
+      font-weight: 700;
+      border-bottom-color: #04208f;
+    }
+  }
+}
+
+.shell-header__account {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+
+  a {
+    color: #04208f;
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.shell-header__user {
+  color: #475569;
+}
+
+.shell-header__logout {
+  background: none;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+
+  &:hover {
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
+  }
+}
+
+main {
+  padding: 1.5rem;
+}

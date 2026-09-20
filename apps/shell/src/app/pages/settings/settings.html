@@ -1,0 +1,12 @@
+<section class="settings">
+  <ui-card title="Account settings">
+    <dl class="settings__list">
+      <dt>Full name</dt>
+      <dd>{{ currentUser()?.fullName }}</dd>
+      <dt>Email</dt>
+      <dd>{{ currentUser()?.email }}</dd>
+      <dt>Role</dt>
+      <dd>{{ currentUser()?.role }}</dd>
+    </dl>
+  </ui-card>
+</section>

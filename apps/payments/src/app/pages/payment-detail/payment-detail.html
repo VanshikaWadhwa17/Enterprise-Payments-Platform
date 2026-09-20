@@ -23,6 +23,20 @@
       <dt>Created</dt>
       <dd>{{ p.createdAt | date: 'medium' }}</dd>
     </dl>
+
+    @if (canApprove() || canCancel()) {
+    <div class="payment-detail__actions">
+      @if (canApprove()) {
+      <ui-button variant="primary" [loading]="updating()" (clicked)="approve()"
+        >Approve</ui-button
+      >
+      } @if (canCancel()) {
+      <ui-button variant="danger" [loading]="updating()" (clicked)="cancel()"
+        >Cancel</ui-button
+      >
+      }
+    </div>
+    }
   </ui-card>
   } @else {
   <p>Payment not found.</p>

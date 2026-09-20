@@ -1,10 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AuthService } from '@epp/auth';
 import type { Payment } from '@epp/types';
 import { formatMoney } from '@epp/utils';
 import {
@@ -42,6 +44,7 @@ const COLUMNS: TableColumn<Payment>[] = [
 })
 export class PaymentList {
   private readonly paymentsService = inject(PaymentsService);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -49,6 +52,7 @@ export class PaymentList {
   readonly payments = signal<Payment[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly canCreate = computed(() => this.authService.hasPermission('PAYMENT_CREATE'));
 
   constructor() {
     this.load();

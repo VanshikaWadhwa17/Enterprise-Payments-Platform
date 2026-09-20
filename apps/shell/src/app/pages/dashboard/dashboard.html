@@ -1,0 +1,16 @@
+<section class="dashboard">
+  <h2 class="dashboard__greeting">
+    Welcome back, {{ currentUser()?.fullName }}
+  </h2>
+  <p class="dashboard__role">{{ currentUser()?.role }}</p>
+
+  <div class="dashboard__grid">
+    @for (link of quickLinks(); track link.path) {
+    <a class="dashboard__link" [routerLink]="link.path">
+      <ui-card [title]="link.label">
+        <p>{{ link.description }}</p>
+      </ui-card>
+    </a>
+    }
+  </div>
+</section>

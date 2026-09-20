@@ -1,0 +1,19 @@
+<header class="shell-header">
+  <h1>{{ title }}</h1>
+  <nav>
+    @for (item of navItems(); track item.path) {
+    <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
+    }
+  </nav>
+  <div class="shell-header__account">
+    <span class="shell-header__user">
+      {{ currentUser()?.fullName }} &middot; {{ currentUser()?.role }}
+    </span>
+    <button type="button" class="shell-header__logout" (click)="logout()">
+      Log out
+    </button>
+  </div>
+</header>
+<main>
+  <router-outlet></router-outlet>
+</main>

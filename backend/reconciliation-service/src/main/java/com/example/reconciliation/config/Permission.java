@@ -1,0 +1,17 @@
+package com.example.reconciliation.config;
+
+public enum Permission {
+    PAYMENT_VIEW,
+    PAYMENT_CREATE,
+    PAYMENT_APPROVE,
+    PAYMENT_CANCEL,
+    FRAUD_VIEW,
+    FRAUD_REVIEW,
+    FRAUD_BLOCK,
+    RECONCILIATION_VIEW,
+    RECONCILIATION_RESOLVE,
+    REPORT_VIEW,
+    USER_VIEW,
+    USER_MANAGE,
+    ROLE_MANAGE
+}

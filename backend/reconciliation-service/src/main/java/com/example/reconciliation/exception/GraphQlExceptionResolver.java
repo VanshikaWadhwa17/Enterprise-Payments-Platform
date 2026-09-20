@@ -5,6 +5,8 @@ import graphql.GraphqlErrorBuilder;
 import graphql.schema.DataFetchingEnvironment;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
 import org.springframework.graphql.execution.ErrorType;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -16,6 +18,18 @@ public class GraphQlExceptionResolver extends DataFetcherExceptionResolverAdapte
             return GraphqlErrorBuilder.newError(env)
                     .errorType(ErrorType.NOT_FOUND)
                     .message(ex.getMessage())
+                    .build();
+        }
+        if (ex instanceof AccessDeniedException) {
+            return GraphqlErrorBuilder.newError(env)
+                    .errorType(ErrorType.FORBIDDEN)
+                    .message("You do not have permission to perform this operation")
+                    .build();
+        }
+        if (ex instanceof AuthenticationException) {
+            return GraphqlErrorBuilder.newError(env)
+                    .errorType(ErrorType.UNAUTHORIZED)
+                    .message("Authentication is required")
                     .build();
         }
         return null;

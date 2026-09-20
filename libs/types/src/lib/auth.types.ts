@@ -1,19 +1,28 @@
-export type Role = 'ADMIN' | 'MAKER' | 'CHECKER' | 'OPERATIONS';
+export type Role =
+  | 'ADMIN'
+  | 'OPERATIONS_MANAGER'
+  | 'PAYMENT_ANALYST'
+  | 'FRAUD_ANALYST'
+  | 'VIEWER';
 
 export type Permission =
-  | 'VIEW_PAYMENTS'
-  | 'CREATE_PAYMENT'
-  | 'APPROVE_PAYMENT'
-  | 'REJECT_PAYMENT'
-  | 'INVESTIGATE_PAYMENTS'
-  | 'RECONCILE_PAYMENTS'
-  | 'VIEW_REPORTS'
-  | 'MANAGE_USERS'
-  | 'MANAGE_CONFIGURATION';
+  | 'PAYMENT_VIEW'
+  | 'PAYMENT_CREATE'
+  | 'PAYMENT_APPROVE'
+  | 'PAYMENT_CANCEL'
+  | 'FRAUD_VIEW'
+  | 'FRAUD_REVIEW'
+  | 'FRAUD_BLOCK'
+  | 'RECONCILIATION_VIEW'
+  | 'RECONCILIATION_RESOLVE'
+  | 'REPORT_VIEW'
+  | 'USER_VIEW'
+  | 'USER_MANAGE'
+  | 'ROLE_MANAGE';
 
 export interface User {
   id: string;
-  username: string;
-  displayName: string;
+  fullName: string;
+  email: string;
   role: Role;
 }

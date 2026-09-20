@@ -15,6 +15,8 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/graphql")
                 .allowedOrigins(allowedOrigins)
-                .allowedMethods("POST", "OPTIONS");
+                .allowedMethods("POST", "OPTIONS")
+                .allowedHeaders("Content-Type", "X-XSRF-TOKEN")
+                .allowCredentials(true);
     }
 }
