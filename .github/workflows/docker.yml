@@ -48,17 +48,21 @@ jobs:
           # after a healthy check lands after seeding completes.
           login_ok=false
           for i in $(seq 1 15); do
-            if curl -sf -c cookies.txt -b cookies.txt -X POST http://localhost:8086/api/auth/login \
+            http_code=$(curl -s -o response.txt -w "%{http_code}" -c cookies.txt -b cookies.txt \
+              -X POST http://localhost:8086/api/auth/login \
               -H "Content-Type: application/json" \
-              -d '{"email":"erin@epp.dev","password":"Passw0rd!"}' > /dev/null; then
+              -d '{"email":"erin@epp.dev","password":"Passw0rd!"}')
+            if [ "$http_code" = "200" ]; then
               login_ok=true
               break
             fi
-            echo "Login not ready yet, retrying..."
+            echo "Login attempt $i got HTTP $http_code, retrying... body: $(cat response.txt)"
             sleep 2
           done
           if [ "$login_ok" != true ]; then
-            echo "Login never succeeded"
+            echo "::error::Login never succeeded. Last HTTP status: $http_code, body: $(cat response.txt)"
+            echo "--- auth-service logs ---"
+            docker compose logs auth-service --tail=100
             exit 1
           fi
           # login alone only sets epp_token; XSRF-TOKEN is seeded by the next
