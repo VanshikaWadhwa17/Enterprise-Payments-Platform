@@ -8,13 +8,19 @@ on:
 jobs:
   build-and-smoke-test:
     runs-on: ubuntu-latest
-    env:
-      # payment/fraud/reconciliation-service refuse to boot without this
-      # (see application.properties: app.jwt.secret=${AUTH_JWT_SECRET:}).
-      # CI-only value, never used outside this workflow.
-      AUTH_JWT_SECRET: ci-only-secret-do-not-use-in-any-real-environment-1234
     steps:
       - uses: actions/checkout@v4
+
+      - name: Generate a CI-only JWT secret
+        # payment/fraud/reconciliation-service refuse to boot without this
+        # (see application.properties: app.jwt.secret=${AUTH_JWT_SECRET:}).
+        # Must be generated the same way as .env.example's local-dev
+        # instructions (openssl rand -base64 32 -> 44 bytes): JwtService
+        # signs with jjwt's Keys.hmacShaKeyFor, which auto-selects HS256
+        # only for keys in the 32-47 byte range and HS384/HS512 for longer
+        # ones -- but every service's JwtDecoder is hardcoded to HS256, so a
+        # secret of the wrong length signs tokens no decoder can verify.
+        run: echo "AUTH_JWT_SECRET=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
 
       - name: Build all images
         run: docker compose build
@@ -41,20 +47,20 @@ jobs:
 
       - name: Log in and capture auth cookies
         run: |
-          # No `set -e` here on purpose -- every call's status/body is
-          # checked and echoed explicitly so a failure is diagnosable from
-          # the public Annotations panel alone.
+          # No `set -e` here on purpose -- every call's status is checked
+          # explicitly so a failure is diagnosable from the public
+          # Annotations panel alone (repo logs need admin access to view).
           login_ok=false
           for i in $(seq 1 15); do
             http_code=$(curl -s -o response.txt -w "%{http_code}" -c cookies.txt -b cookies.txt \
               -X POST http://localhost:8086/api/auth/login \
               -H "Content-Type: application/json" \
               -d '{"email":"erin@epp.dev","password":"Passw0rd!"}')
-            echo "Login attempt $i: HTTP $http_code, body: $(cat response.txt)"
             if [ "$http_code" = "200" ]; then
               login_ok=true
               break
             fi
+            echo "Login attempt $i got HTTP $http_code, retrying..."
             sleep 2
           done
           if [ "$login_ok" != true ]; then
@@ -63,29 +69,18 @@ jobs:
             exit 1
           fi
 
-          echo "--- cookies.txt after login ---"
-          cat cookies.txt
-
           # login alone only sets epp_token; XSRF-TOKEN is seeded by the next
           # authenticated request, same as the frontend's refreshSession()
           # bootstrap call.
           me_code=$(curl -s -o me_response.txt -w "%{http_code}" -c cookies.txt -b cookies.txt \
             http://localhost:8086/api/auth/me)
-          echo "GET /me: HTTP $me_code, body: $(cat me_response.txt)"
-          echo "--- cookies.txt after /me ---"
-          cat cookies.txt
-
           if [ "$me_code" != "200" ]; then
             echo "::error::GET /me returned HTTP $me_code, body: $(cat me_response.txt)"
             docker compose logs auth-service --tail=100 || true
             exit 1
           fi
-          if ! grep -q epp_token cookies.txt; then
-            echo "::error::epp_token cookie missing after login"
-            exit 1
-          fi
-          if ! grep -q XSRF-TOKEN cookies.txt; then
-            echo "::error::XSRF-TOKEN cookie missing after /me"
+          if ! grep -q epp_token cookies.txt || ! grep -q XSRF-TOKEN cookies.txt; then
+            echo "::error::epp_token or XSRF-TOKEN cookie missing after login/me"
             exit 1
           fi
 
