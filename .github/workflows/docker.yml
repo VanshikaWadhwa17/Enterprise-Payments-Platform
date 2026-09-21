@@ -114,16 +114,40 @@ jobs:
           curl -sf -X POST http://localhost:8081/graphql -H "Content-Type: application/json" \
             -d '{"query":"query{accounts{id}}"}' | grep -q '"data"'
 
+      - name: Smoke test admin API
+        run: |
+          set -e
+          # carol@epp.dev is the seeded ADMIN account -- USER_VIEW is required
+          # for GET /api/auth/users (UserAdminController).
+          carol_code=$(curl -s -o carol_login.txt -w "%{http_code}" -c carol_cookies.txt \
+            -X POST http://localhost:8086/api/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"carol@epp.dev","password":"Passw0rd!"}')
+          if [ "$carol_code" != "200" ]; then
+            echo "::error::Admin login returned HTTP $carol_code, body: $(cat carol_login.txt)"
+            exit 1
+          fi
+
+          users_response=$(curl -sf -b carol_cookies.txt http://localhost:8086/api/auth/users)
+          echo "$users_response" | grep -q '"email":"alice@epp.dev"'
+
       - name: Smoke test frontend
         run: |
-          for i in $(seq 1 30); do
-            if curl -sf http://localhost:4200 > /dev/null; then
-              exit 0
+          for port in 4200 4201 4202 4203 4204 4205; do
+            echo "Waiting for frontend on port $port..."
+            up=false
+            for i in $(seq 1 30); do
+              if curl -sf "http://localhost:$port" > /dev/null; then
+                up=true
+                break
+              fi
+              sleep 2
+            done
+            if [ "$up" != true ]; then
+              echo "Frontend on port $port did not come up in time"
+              exit 1
             fi
-            sleep 2
           done
-          echo "Shell did not come up in time"
-          exit 1
 
       - name: Dump logs on failure
         if: failure()

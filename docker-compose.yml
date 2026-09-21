@@ -245,5 +245,31 @@ services:
     ports:
       - '4203:80'
 
+  reports:
+    build:
+      context: .
+      dockerfile: infra/angular.Dockerfile
+      args:
+        APP_NAME: reports
+    container_name: epp-reports
+    environment:
+      GRAPHQL_PAYMENTS_URL: ${GRAPHQL_PAYMENTS_URL:-http://localhost:8080/graphql}
+      GRAPHQL_FRAUD_URL: ${GRAPHQL_FRAUD_URL:-http://localhost:8082/graphql}
+      GRAPHQL_RECONCILIATION_URL: ${GRAPHQL_RECONCILIATION_URL:-http://localhost:8085/graphql}
+    ports:
+      - '4204:80'
+
+  admin:
+    build:
+      context: .
+      dockerfile: infra/angular.Dockerfile
+      args:
+        APP_NAME: admin
+    container_name: epp-admin
+    environment:
+      AUTH_API_URL: ${AUTH_API_URL:-http://localhost:8086}
+    ports:
+      - '4205:80'
+
 volumes:
   postgres-data:

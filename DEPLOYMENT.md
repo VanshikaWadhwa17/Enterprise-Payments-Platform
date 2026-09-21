@@ -92,7 +92,7 @@ Given the frontend/backend split is on two different vendor platforms, a custom 
 
 ## 6. Deploy the frontend to Vercel
 
-Create **4 separate Vercel projects** — one each for shell, payments, fraud, reconciliation — all pointed at the same GitHub repo. Vercel needs the whole Nx workspace present to resolve shared `libs/*`, so for every project:
+Create **6 separate Vercel projects** — one each for shell, payments, fraud, reconciliation, reports, admin — all pointed at the same GitHub repo. Vercel needs the whole Nx workspace present to resolve shared `libs/*`, so for every project:
 
 - **Root Directory**: repo root (leave as `.` — do not point it at `apps/<app>`)
 - **Install Command**: `pnpm install --frozen-lockfile`
@@ -103,31 +103,31 @@ Create **4 separate Vercel projects** — one each for shell, payments, fraud, r
   e.g. `node scripts/generate-env-js.mjs shell && npx nx build shell --configuration=production` for the shell project.
 - **Output Directory**: `dist/apps/<app-name>/browser` (e.g. `dist/apps/shell/browser`)
 
-`vercel.json` at the repo root is shared by all 4 projects — it adds the wildcard `Access-Control-Allow-Origin` header Native Federation needs to fetch `remoteEntry.json`/chunks cross-origin between these 4 separate Vercel deployments (the same thing `infra/nginx/spa.conf`'s CORS header does for the Docker path), and rewrites unmatched paths to `index.html` for Angular's router — existing static files (JS chunks, `remoteEntry.json`, `env.js`) are still served directly, this only catches paths that don't correspond to a real file.
+`vercel.json` at the repo root is shared by all 6 projects — it adds the wildcard `Access-Control-Allow-Origin` header Native Federation needs to fetch `remoteEntry.json`/chunks cross-origin between these 6 separate Vercel deployments (the same thing `infra/nginx/spa.conf`'s CORS header does for the Docker path), and rewrites unmatched paths to `index.html` for Angular's router — existing static files (JS chunks, `remoteEntry.json`, `env.js`) are still served directly, this only catches paths that don't correspond to a real file.
 
 Set these environment variables per Vercel project (in the project's dashboard, **not** committed anywhere) — **these are public URLs only, never secrets**, since `env.js` ships to every browser that loads the app:
 
 | Variable | Used by | Value |
 |---|---|---|
-| `GRAPHQL_PAYMENTS_URL` | shell, payments | `https://<payment-service>.up.railway.app/graphql` |
-| `GRAPHQL_FRAUD_URL` | shell, fraud | `https://<fraud-service>.up.railway.app/graphql` |
-| `GRAPHQL_RECONCILIATION_URL` | shell, reconciliation | `https://<reconciliation-service>.up.railway.app/graphql` |
-| `AUTH_API_URL` | shell | `https://<auth-service>.up.railway.app` |
+| `GRAPHQL_PAYMENTS_URL` | shell, payments, reports | `https://<payment-service>.up.railway.app/graphql` |
+| `GRAPHQL_FRAUD_URL` | shell, fraud, reports | `https://<fraud-service>.up.railway.app/graphql` |
+| `GRAPHQL_RECONCILIATION_URL` | shell, reconciliation, reports | `https://<reconciliation-service>.up.railway.app/graphql` |
+| `AUTH_API_URL` | shell, admin | `https://<auth-service>.up.railway.app` |
 | `REMOTE_PAYMENTS_URL` | shell | `https://<payments-project>.vercel.app/remoteEntry.json` |
 | `REMOTE_FRAUD_URL` | shell | `https://<fraud-project>.vercel.app/remoteEntry.json` |
 | `REMOTE_RECONCILIATION_URL` | shell | `https://<reconciliation-project>.vercel.app/remoteEntry.json` |
-| `REMOTE_REPORTS_URL` | shell | (leave pointing at a placeholder until Reports is deployed — it's not containerized/deployed yet) |
-| `REMOTE_ADMIN_URL` | shell | (same caveat as Reports) |
+| `REMOTE_REPORTS_URL` | shell | `https://<reports-project>.vercel.app/remoteEntry.json` |
+| `REMOTE_ADMIN_URL` | shell | `https://<admin-project>.vercel.app/remoteEntry.json` |
 
 `scripts/generate-env-js.mjs` regenerates `apps/<app>/public/env.js` from these at build time, before `nx build` copies `public/` into the output directory — the same `window.__env` contract works whether it's Vercel (build-time) or Railway/Docker (container-start via `infra/40-generate-env-js.sh`) generating it.
 
-### 6a. Verifying Native Federation across the 4 separate deployments
+### 6a. Verifying Native Federation across the 6 separate deployments
 
-The decision (already reflected above): **one Vercel project per deployable app** (shell, payments, fraud, reconciliation — Reports and Admin stay undeployed per the out-of-scope list), each building only its own app but from the full repo root so Nx can resolve shared `libs/*`. This is the only layout that makes sense here — Native Federation loads remotes at runtime via `fetch('<remote-origin>/remoteEntry.json')`, not at build time, so each remote genuinely has to be its own independently-deployed origin; there's no single-project layout that serves all 4 apps' `remoteEntry.json` under one domain without either a reverse proxy in front of Vercel or falling back to the Docker path in `infra/angular.Dockerfile`.
+The decision (already reflected above): **one Vercel project per deployable app** (shell, payments, fraud, reconciliation, reports, admin), each building only its own app but from the full repo root so Nx can resolve shared `libs/*`. This is the only layout that makes sense here — Native Federation loads remotes at runtime via `fetch('<remote-origin>/remoteEntry.json')`, not at build time, so each remote genuinely has to be its own independently-deployed origin; there's no single-project layout that serves all 6 apps' `remoteEntry.json` under one domain without either a reverse proxy in front of Vercel or falling back to the Docker path in `infra/angular.Dockerfile`.
 
 Two things that could silently break this and are worth checking explicitly, not just "it loaded once":
 
-- **The shared `vercel.json` CORS header must be present on every one of the 4 deployments** (it's the same file, so this only breaks if a project's Root Directory setting is wrong and it isn't picking up the repo-root `vercel.json`). Without `Access-Control-Allow-Origin: *`, the shell's `fetch('.../remoteEntry.json')` to the payments/fraud/reconciliation origins fails with a CORS error in the console, not a 404 — check DevTools console, not just that the page rendered.
+- **The shared `vercel.json` CORS header must be present on every one of the 6 deployments** (it's the same file, so this only breaks if a project's Root Directory setting is wrong and it isn't picking up the repo-root `vercel.json`). Without `Access-Control-Allow-Origin: *`, the shell's `fetch('.../remoteEntry.json')` to the payments/fraud/reconciliation/reports/admin origins fails with a CORS error in the console, not a 404 — check DevTools console, not just that the page rendered.
 - **The SPA rewrite (`/(.*) → /index.html`) only fires on unmatched paths**, so it doesn't shadow `remoteEntry.json` or the JS chunks Vercel serves as real files — but confirm this per deployment: `curl -sI https://<payments-project>.vercel.app/remoteEntry.json` should return the JSON file (`content-type: application/json`), not the rewritten `index.html`. If it ever returns HTML, the remote's federation manifest is broken for every consumer (shell), not just direct visitors to that project's URL.
 - **Deep-link refresh** on a route owned by a remote (e.g. hard-refresh on `/payments/some-id` inside the shell) must still resolve via the shell's own `index.html` rewrite and then have Angular's router + Native Federation re-fetch and re-mount the `payments` remote — this is the routing failure mode most likely to only show up in production, since local dev usually serves everything from one dev-server origin.
 
@@ -156,7 +156,7 @@ Phase C isn't done when the code compiles or Railway says deployed — walk this
 - [ ] Frontend MFEs load their remote bundles (Native Federation works across deployed origins)
 - [ ] **No `localhost` URLs remain in the deployed frontend's browser bundle** — open browser devtools, check the Network tab or `view-source:` on the deployed `env.js`; it should show your real deployed URLs, not `localhost`
 - [ ] Railway logs show no startup/configuration errors on any backend service
-- [ ] Vercel build logs show no errors on any of the 4 frontend projects, and each one's deployed `env.js` reflects that project's own env vars (not another app's, and not the dev defaults)
+- [ ] Vercel build logs show no errors on any of the 6 frontend projects, and each one's deployed `env.js` reflects that project's own env vars (not another app's, and not the dev defaults)
 
 ## 8. Production authentication & RBAC test script
 
@@ -219,4 +219,6 @@ Expected result: step 3 fails, step 4 succeeds. Both are enforced the same way �
 
 ## Explicitly out of scope for this phase
 
-`account-service` authentication (it has none wired up today — pre-existing, unrelated gap), adding `auth-service` to the CI test matrix, Reports/Admin deployment (not containerized yet), any new business features, Kubernetes, Kafka redesign, database redesign, GraphQL redesign, and frontend UI work.
+`account-service` authentication (it has none wired up today — pre-existing, unrelated gap), Kubernetes, Kafka redesign, database redesign, GraphQL redesign.
+
+(Reports/Admin deployment and adding `auth-service` to the CI test matrix were out of scope when this list was first written — both are now done: Reports/Admin are real features with their own Vercel projects in §6, and `auth-service` is in `.github/workflows/backend.yml`'s test matrix.)
