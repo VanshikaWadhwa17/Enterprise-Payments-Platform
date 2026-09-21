@@ -121,6 +121,16 @@ Set these environment variables per Vercel project (in the project's dashboard, 
 
 `scripts/generate-env-js.mjs` regenerates `apps/<app>/public/env.js` from these at build time, before `nx build` copies `public/` into the output directory — the same `window.__env` contract works whether it's Vercel (build-time) or Railway/Docker (container-start via `infra/40-generate-env-js.sh`) generating it.
 
+### 6a. Verifying Native Federation across the 4 separate deployments
+
+The decision (already reflected above): **one Vercel project per deployable app** (shell, payments, fraud, reconciliation — Reports and Admin stay undeployed per the out-of-scope list), each building only its own app but from the full repo root so Nx can resolve shared `libs/*`. This is the only layout that makes sense here — Native Federation loads remotes at runtime via `fetch('<remote-origin>/remoteEntry.json')`, not at build time, so each remote genuinely has to be its own independently-deployed origin; there's no single-project layout that serves all 4 apps' `remoteEntry.json` under one domain without either a reverse proxy in front of Vercel or falling back to the Docker path in `infra/angular.Dockerfile`.
+
+Two things that could silently break this and are worth checking explicitly, not just "it loaded once":
+
+- **The shared `vercel.json` CORS header must be present on every one of the 4 deployments** (it's the same file, so this only breaks if a project's Root Directory setting is wrong and it isn't picking up the repo-root `vercel.json`). Without `Access-Control-Allow-Origin: *`, the shell's `fetch('.../remoteEntry.json')` to the payments/fraud/reconciliation origins fails with a CORS error in the console, not a 404 — check DevTools console, not just that the page rendered.
+- **The SPA rewrite (`/(.*) → /index.html`) only fires on unmatched paths**, so it doesn't shadow `remoteEntry.json` or the JS chunks Vercel serves as real files — but confirm this per deployment: `curl -sI https://<payments-project>.vercel.app/remoteEntry.json` should return the JSON file (`content-type: application/json`), not the rewritten `index.html`. If it ever returns HTML, the remote's federation manifest is broken for every consumer (shell), not just direct visitors to that project's URL.
+- **Deep-link refresh** on a route owned by a remote (e.g. hard-refresh on `/payments/some-id` inside the shell) must still resolve via the shell's own `index.html` rewrite and then have Angular's router + Native Federation re-fetch and re-mount the `payments` remote — this is the routing failure mode most likely to only show up in production, since local dev usually serves everything from one dev-server origin.
+
 ## 7. Production readiness gate
 
 Phase C isn't done when the code compiles or Railway says deployed — walk this checklist against the actual deployed environment before calling it done:
@@ -129,6 +139,7 @@ Phase C isn't done when the code compiles or Railway says deployed — walk this
 - [ ] The frontend's `env.js` contract works identically whether generated at container start (local/Railway/Docker) or at build time (Vercel) — no application code differs between them
 - [ ] No production secrets are committed anywhere in the repo
 - [ ] Production `AUTH_JWT_SECRET` is freshly generated — not copied from the local `.env`
+- [ ] Decided what to do about `DataSeeder` (auth-service, payment-service, fraud-service, reconciliation-service, account-service) before first boot — see the callout in §8
 - [ ] Postgres reachable from every service that needs it
 - [ ] Redis reachable from payment-service and account-service
 - [ ] Kafka reachable from payment/fraud/notification/audit services
@@ -140,12 +151,71 @@ Phase C isn't done when the code compiles or Railway says deployed — walk this
 - [ ] `/me` (session restore) works after a hard page refresh
 - [ ] Logout works
 - [ ] Protected GraphQL requests succeed (payment/fraud/reconciliation)
-- [ ] RBAC still behaves correctly (spot-check at least one restricted role)
+- [ ] RBAC still behaves correctly against production — run the §8b direct-GraphQL script, don't just spot-check the UI
 - [ ] Payment → Kafka → Fraud/Audit/Notification event flow still works end-to-end
 - [ ] Frontend MFEs load their remote bundles (Native Federation works across deployed origins)
 - [ ] **No `localhost` URLs remain in the deployed frontend's browser bundle** — open browser devtools, check the Network tab or `view-source:` on the deployed `env.js`; it should show your real deployed URLs, not `localhost`
 - [ ] Railway logs show no startup/configuration errors on any backend service
 - [ ] Vercel build logs show no errors on any of the 4 frontend projects, and each one's deployed `env.js` reflects that project's own env vars (not another app's, and not the dev defaults)
+
+## 8. Production authentication & RBAC test script
+
+This is the real production security demonstration for this phase — not "does login work," but "does the deployed backend actually enforce authorization when called directly, not just when the UI hides a button." Run it against the real deployed URLs, in this order, after step 7's checklist is green.
+
+### ⚠️ Before you run it: `DataSeeder` ships demo accounts to production
+
+Every backend service (`auth-service`, `payment-service`, `fraud-service`, `account-service`, `reconciliation-service`) has a `DataSeeder` (`backend/*/src/main/java/.../config/DataSeeder.java`) that runs unconditionally on boot — the only guard is "does this table already have rows," not an environment/profile check. On a fresh production Postgres (empty tables, which is exactly what a first Railway deploy looks like), these seeders **will** run and create:
+
+- `alice@epp.dev` (`PAYMENT_ANALYST`), `bob@epp.dev` (`OPERATIONS_MANAGER`), `carol@epp.dev` (`ADMIN`), `dan@epp.dev` (`FRAUD_ANALYST`), `erin@epp.dev` (`VIEWER`) — all sharing the password `Passw0rd!`, hardcoded in `auth-service`'s `DataSeeder` and documented in its README.
+- Demo payments/fraud cases/accounts/reconciliation records in the other four services.
+
+That's convenient for steps D2 below (Alice and Bob already exist with exactly the right roles) but is a real production exposure if left in place: anyone who reads this public repo has valid credentials, including a full `ADMIN` account, against your live deployment. **Decide before go-live** whether to add a profile guard (e.g. `@Profile("!prod")`) to all five `DataSeeder`s, delete the demo rows after first boot, or rotate `Passw0rd!` for every seeded account immediately after deploying — this is a real gap, not a hypothetical.
+
+### 8a. Browser flow (login → cookie → GraphQL → refresh → logout)
+
+1. Open the deployed shell URL. Log in as `alice@epp.dev` / `Passw0rd!`.
+2. DevTools → Application → Cookies: confirm `epp_token` (httpOnly, `Secure`) and `XSRF-TOKEN` (readable, `Secure`) are both set on the auth-service's/backend's domain, with `SameSite` matching step 5's topology decision.
+3. Navigate to the dashboard, then Payments. Confirm the payments list loads (a GraphQL `payments` query succeeded — check the Network tab: `POST .../graphql` returns `200` with data, not a CORS or 401 error).
+4. **Hard refresh** the page (not SPA navigation). Confirm you're still shown as logged in — this exercises `GET /api/auth/me`, which restores `currentUser` from the `epp_token` cookie alone (`libs/auth/src/lib/authentication/auth.service.ts:60-71`). If this fails but step 2 showed a valid cookie, the cookie isn't being sent on the follow-up request — check `Secure`/`SameSite`/domain mismatch first.
+5. Log out. Confirm `epp_token` is cleared (DevTools shows it gone or expired) and that navigating back to `/payments` redirects to login rather than rendering — the guard should treat "no cookie" as unauthenticated regardless of any client-side state still cached in the tab.
+
+### 8b. Direct-GraphQL RBAC test (Alice creates, Bob approves, Alice is refused)
+
+This is the part worth doing with `curl`, not just the UI — it proves the *backend* enforces the rule, independent of the frontend hiding an "Approve" button Alice's role shouldn't see. All mutations need both the `epp_token` cookie and, since `/graphql` is CSRF-protected (`backend/payment-service/.../SecurityConfig.java:97-100`), the `XSRF-TOKEN` cookie echoed back as an `X-XSRF-TOKEN` header — a bare bearer cookie without it gets a `403` for the wrong reason (CSRF, not RBAC), which would give a false positive here.
+
+```bash
+AUTH_URL=https://<auth-service>.up.railway.app
+PAYMENTS_URL=https://<payment-service>.up.railway.app
+
+# 1. Alice logs in, capturing both cookies
+curl -sc alice.jar -b alice.jar -X POST "$AUTH_URL/api/auth/login" \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"alice@epp.dev","password":"Passw0rd!"}' | jq .
+
+# 2. Alice creates a payment (PAYMENT_ANALYST has PAYMENT_CREATE) -- capture the returned id
+XSRF=$(grep XSRF-TOKEN alice.jar | awk '{print $7}')
+curl -sb alice.jar -c alice.jar -X POST "$PAYMENTS_URL/graphql" \
+  -H 'Content-Type: application/json' -H "X-XSRF-TOKEN: $XSRF" \
+  -d '{"query":"mutation($i: CreatePaymentInput!){ createPayment(input:$i){ id status } }","variables":{"i":{"amount":100,"currency":"USD","beneficiaryName":"Test","beneficiaryAccountNumber":"12345","beneficiaryCountry":"US"}}}' | jq .
+
+# 3. Alice tries to approve her own payment directly -- expect a GraphQL error (Spring Security's
+#    AccessDeniedException), NOT a 200 with an approved payment. PAYMENT_ANALYST lacks PAYMENT_APPROVE.
+curl -sb alice.jar -c alice.jar -X POST "$PAYMENTS_URL/graphql" \
+  -H 'Content-Type: application/json' -H "X-XSRF-TOKEN: $XSRF" \
+  -d '{"query":"mutation($id: ID!){ updatePaymentStatus(id:$id, status: APPROVED){ id status } }","variables":{"id":"<id-from-step-2>"}}' | jq .
+
+# 4. Bob logs in and approves the same payment (OPERATIONS_MANAGER has PAYMENT_APPROVE) -- expect success
+curl -sc bob.jar -b bob.jar -X POST "$AUTH_URL/api/auth/login" \
+  -H 'Content-Type: application/json' -d '{"email":"bob@epp.dev","password":"Passw0rd!"}' | jq .
+XSRF_BOB=$(grep XSRF-TOKEN bob.jar | awk '{print $7}')
+curl -sb bob.jar -c bob.jar -X POST "$PAYMENTS_URL/graphql" \
+  -H 'Content-Type: application/json' -H "X-XSRF-TOKEN: $XSRF_BOB" \
+  -d '{"query":"mutation($id: ID!){ updatePaymentStatus(id:$id, status: APPROVED){ id status } }","variables":{"id":"<id-from-step-2>"}}' | jq .
+```
+
+Expected result: step 3 fails, step 4 succeeds. Both are enforced the same way — `@PreAuthorize("hasAnyAuthority('PAYMENT_APPROVE', 'PAYMENT_CANCEL')")` on `updatePaymentStatus` (`backend/payment-service/.../PaymentController.java:50-51`) — so what you're really confirming is that role-based `@PreAuthorize` still evaluates correctly against the production JWT/cookie, not against some dev-only bypass.
+
+**Known gap, not a bug in this test:** this only proves *role*-based RBAC (Alice's role lacks the permission). There is currently no maker-checker check (creator ≠ approver) in `PaymentService`/`Payment` — the entity has no `createdBy` field at all. A user whose role has *both* `PAYMENT_CREATE` and `PAYMENT_APPROVE` (i.e. `ADMIN`/Carol) can create and approve the same payment today. If same-user self-approval needs to be blocked regardless of role, that's a separate backend change, not something this deployment phase should silently paper over by only testing the case that already passes.
 
 ## Explicitly out of scope for this phase
 
