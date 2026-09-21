@@ -1,5 +1,70 @@
-<section class="mfe-placeholder">
-  <h2>{{ title }} works!</h2>
-  <p>Reports MFE loaded via Native Federation.</p>
+<section class="reports">
+  <header class="reports__header">
+    <h2>Reports</h2>
+  </header>
+
+  @if (canViewPayments()) {
+  <ui-card title="Payment volume">
+    @if (paymentsLoading()) {
+    <ui-spinner label="Loading payment volume…" />
+    } @else if (paymentsError()) {
+    <ui-error-state [message]="paymentsError()!" (retry)="loadPayments()" />
+    } @else if (payments().length === 0) {
+    <ui-empty-state
+      title="No payments yet"
+      description="Payment volume will show up here once payments are created."
+    />
+    } @else {
+    <div class="reports__kpi-row">
+      <ui-stat-tile label="Total volume" [value]="paymentVolumeDisplay()" />
+      <ui-stat-tile label="Successful" [value]="paymentStatusBreakdown().successful + ''" />
+      <ui-stat-tile label="Failed" [value]="paymentStatusBreakdown().failed + ''" />
+    </div>
+    <ui-table [rows]="paymentStatusRows()" [columns]="breakdownColumns" trackByKey="label" />
+    }
+  </ui-card>
+  }
+
+  @if (canViewFraud()) {
+  <ui-card title="Fraud trends">
+    @if (fraudLoading()) {
+    <ui-spinner label="Loading fraud trends…" />
+    } @else if (fraudError()) {
+    <ui-error-state [message]="fraudError()!" (retry)="loadFraud()" />
+    } @else if (fraudCases().length === 0) {
+    <ui-empty-state
+      title="No fraud cases"
+      description="Fraud trends will show up here once cases are opened."
+    />
+    } @else {
+    <div class="reports__breakdown-row">
+      <div>
+        <h4>By status</h4>
+        <ui-table [rows]="fraudStatusRows()" [columns]="breakdownColumns" trackByKey="label" />
+      </div>
+      <div>
+        <h4>By risk level</h4>
+        <ui-table [rows]="fraudRiskRows()" [columns]="breakdownColumns" trackByKey="label" />
+      </div>
+    </div>
+    }
+  </ui-card>
+  }
+
+  @if (canViewReconciliation()) {
+  <ui-card title="Reconciliation status">
+    @if (reconciliationLoading()) {
+    <ui-spinner label="Loading reconciliation status…" />
+    } @else if (reconciliationError()) {
+    <ui-error-state [message]="reconciliationError()!" (retry)="loadReconciliation()" />
+    } @else if (reconciliationRecords().length === 0) {
+    <ui-empty-state
+      title="No reconciliation records"
+      description="Reconciliation status will show up here once records exist."
+    />
+    } @else {
+    <ui-table [rows]="reconciliationRows()" [columns]="breakdownColumns" trackByKey="label" />
+    }
+  </ui-card>
+  }
 </section>
-<router-outlet></router-outlet>

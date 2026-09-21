@@ -1,0 +1,30 @@
+.reports {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.reports__header {
+  h2 {
+    margin: 0;
+  }
+}
+
+.reports__kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.reports__breakdown-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-6);
+
+  h4 {
+    margin: 0 0 var(--space-2);
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+  }
+}
