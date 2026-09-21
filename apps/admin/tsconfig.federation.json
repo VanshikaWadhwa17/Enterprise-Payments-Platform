@@ -1,5 +1,12 @@
 {
   "extends": "./tsconfig.app.json",
-  "files": ["src/app/app.ts"],
-  "include": ["src/**/*.d.ts"]
+  "files": [
+    "../../libs/auth/src/index.ts",
+    "../../libs/types/src/index.ts",
+    "../../libs/ui/src/index.ts",
+    "src/app/app.ts"
+  ],
+  "include": [
+    "src/**/*.d.ts"
+  ]
 }

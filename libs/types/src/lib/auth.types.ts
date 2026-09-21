@@ -25,4 +25,5 @@ export interface User {
   fullName: string;
   email: string;
   role: Role;
+  enabled: boolean;
 }

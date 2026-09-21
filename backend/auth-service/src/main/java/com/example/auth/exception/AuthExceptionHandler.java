@@ -34,4 +34,9 @@ public class AuthExceptionHandler {
     public ResponseEntity<Map<String, String>> handleInvalidCredentials(InvalidCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", ex.getMessage()));
     }
+
+    @ExceptionHandler(SelfModificationException.class)
+    public ResponseEntity<Map<String, String>> handleSelfModification(SelfModificationException ex) {
+        return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+    }
 }

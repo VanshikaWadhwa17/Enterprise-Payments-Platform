@@ -1,5 +1,38 @@
-<section class="mfe-placeholder">
-  <h2>{{ title }} works!</h2>
-  <p>Admin MFE loaded via Native Federation.</p>
+<section class="admin">
+  <header class="admin__header">
+    <h2>Admin</h2>
+  </header>
+
+  @if (loading()) {
+  <ui-spinner label="Loading users…" />
+  } @else if (error()) {
+  <ui-error-state [message]="error()!" (retry)="load()" />
+  } @else if (users().length === 0) {
+  <ui-empty-state title="No users" description="No users found." />
+  } @else {
+  <ui-table [rows]="users()" [columns]="columns" trackByKey="id" [rowActions]="rowActions">
+    <ng-template #rowActions let-user>
+      @if (canManageRole()) {
+      <select
+        class="admin__role-select"
+        [disabled]="isSelf(user)"
+        [value]="user.role"
+        (change)="changeRole(user, $any($event.target).value)"
+      >
+        @for (role of roles; track role) {
+        <option [value]="role">{{ role }}</option>
+        }
+      </select>
+      } @if (canManageStatus()) {
+      <ui-button
+        variant="ghost"
+        [disabled]="isSelf(user)"
+        (clicked)="toggleStatus(user)"
+      >
+        {{ user.enabled ? 'Disable' : 'Enable' }}
+      </ui-button>
+      }
+    </ng-template>
+  </ui-table>
+  }
 </section>
-<router-outlet></router-outlet>

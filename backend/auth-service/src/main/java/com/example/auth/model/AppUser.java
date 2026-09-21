@@ -39,6 +39,14 @@ public class AppUser implements Serializable {
     @Column(nullable = false)
     private Role role;
 
+    // columnDefinition forces a DEFAULT clause into the generated DDL --
+    // without it, Hibernate's ddl-auto=update emits a bare
+    // `ADD COLUMN enabled boolean not null`, which Postgres rejects outright
+    // against a table that already has rows (verified against the real
+    // docker-compose Postgres, which already has DataSeeder's demo users).
+    @Column(nullable = false, columnDefinition = "boolean not null default true")
+    private boolean enabled = true;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 }

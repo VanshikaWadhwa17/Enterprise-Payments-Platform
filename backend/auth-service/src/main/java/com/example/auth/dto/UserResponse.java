@@ -7,7 +7,8 @@ import com.example.auth.model.Role;
 import java.util.List;
 import java.util.UUID;
 
-public record UserResponse(UUID id, String fullName, String email, Role role, List<Permission> permissions) {
+public record UserResponse(
+        UUID id, String fullName, String email, Role role, boolean enabled, List<Permission> permissions) {
 
     public static UserResponse from(AppUser user) {
         return new UserResponse(
@@ -15,6 +16,7 @@ public record UserResponse(UUID id, String fullName, String email, Role role, Li
                 user.getFullName(),
                 user.getEmail(),
                 user.getRole(),
+                user.isEnabled(),
                 List.copyOf(RolePermissions.forRole(user.getRole())));
     }
 }

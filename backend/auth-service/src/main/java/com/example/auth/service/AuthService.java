@@ -5,9 +5,11 @@ import com.example.auth.dto.SignupRequest;
 import com.example.auth.exception.EmailAlreadyExistsException;
 import com.example.auth.exception.InvalidCredentialsException;
 import com.example.auth.exception.PasswordMismatchException;
+import com.example.auth.exception.SelfModificationException;
 import com.example.auth.model.AppUser;
 import com.example.auth.model.Role;
 import com.example.auth.repository.AppUserRepository;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -46,11 +48,44 @@ public class AuthService {
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new InvalidCredentialsException();
         }
+        // Deliberately the same generic error as a wrong password -- the API
+        // must not leak whether an email belongs to a disabled account. Note
+        // this only blocks *new* logins: a JWT already issued before the
+        // account was disabled is stateless and stays valid, locally verified
+        // by each service, until it expires (app.jwt.expiration-seconds, 8h
+        // default). No token revocation/introspection exists in this phase --
+        // a deliberate scope boundary, not an oversight.
+        if (!user.isEnabled()) {
+            throw new InvalidCredentialsException();
+        }
         return user;
     }
 
     @Transactional(readOnly = true)
     public AppUser findById(UUID id) {
         return appUserRepository.findById(id).orElseThrow(InvalidCredentialsException::new);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AppUser> listUsers() {
+        return appUserRepository.findAll();
+    }
+
+    public AppUser updateRole(UUID id, Role role, UUID callerId) {
+        if (id.equals(callerId)) {
+            throw new SelfModificationException();
+        }
+        AppUser user = findById(id);
+        user.setRole(role);
+        return appUserRepository.save(user);
+    }
+
+    public AppUser updateStatus(UUID id, boolean enabled, UUID callerId) {
+        if (id.equals(callerId)) {
+            throw new SelfModificationException();
+        }
+        AppUser user = findById(id);
+        user.setEnabled(enabled);
+        return appUserRepository.save(user);
     }
 }

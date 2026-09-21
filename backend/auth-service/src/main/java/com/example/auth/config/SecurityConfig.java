@@ -1,17 +1,26 @@
 package com.example.auth.config;
 
+import com.example.auth.model.Role;
+import com.example.auth.model.RolePermissions;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
@@ -27,6 +36,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
@@ -40,9 +50,40 @@ public class SecurityConfig {
         return NimbusJwtDecoder.withSecretKey(key).build();
     }
 
+    /**
+     * The JWT only carries a `role` claim (see JwtService) -- permissions are
+     * derived here from the same RolePermissions map used by payment/fraud/
+     * reconciliation-service and Angular, and exposed as authorities so
+     * {@code @PreAuthorize("hasAuthority('USER_VIEW')")} works directly on
+     * the new user-management endpoints.
+     */
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(this::authoritiesFrom);
+        return converter;
+    }
+
+    private List<GrantedAuthority> authoritiesFrom(Jwt jwt) {
+        String roleClaim = jwt.getClaimAsString("role");
+        if (roleClaim == null) {
+            return List.of();
+        }
+        Role role;
+        try {
+            role = Role.valueOf(roleClaim);
+        } catch (IllegalArgumentException ex) {
+            return List.of();
+        }
+        return RolePermissions.forRole(role).stream()
+                .map(permission -> (GrantedAuthority) new SimpleGrantedAuthority(permission.name()))
+                .collect(Collectors.toList());
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
+            JwtAuthenticationConverter converter,
             @Value("${app.cookie.secure}") boolean cookieSecure,
             @Value("${app.cookie.same-site}") String cookieSameSite)
             throws Exception {
@@ -78,7 +119,7 @@ public class SecurityConfig {
                         .permitAll()
                         .anyRequest()
                         .authenticated())
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(converter))
                         .bearerTokenResolver(new CookieBearerTokenResolver()));
         return http.build();
     }
