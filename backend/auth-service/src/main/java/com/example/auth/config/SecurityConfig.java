@@ -41,7 +41,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            @Value("${app.cookie.secure}") boolean cookieSecure,
+            @Value("${app.cookie.same-site}") String cookieSameSite)
+            throws Exception {
         // Built manually (not via the .csrf(...) DSL) so we control
         // requireCsrfProtectionMatcher directly. Going through the DSL here
         // would let oauth2ResourceServer() silently exempt every
@@ -52,7 +56,14 @@ public class SecurityConfig {
         RequestMatcher loginOrSignup = new OrRequestMatcher(
                 PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/auth/login"),
                 PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/auth/signup"));
-        CsrfFilter csrfFilter = new CsrfFilter(CookieCsrfTokenRepository.withHttpOnlyFalse());
+        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        // XSRF-TOKEN must carry the same Secure/SameSite as the epp_token
+        // cookie (AuthCookieFactory) -- otherwise the browser accepts one
+        // cookie and rejects the other under the exact same HTTPS/cross-site
+        // conditions, breaking the CSRF check silently in production.
+        csrfTokenRepository.setCookieCustomizer(
+                cookie -> cookie.secure(cookieSecure).sameSite(cookieSameSite));
+        CsrfFilter csrfFilter = new CsrfFilter(csrfTokenRepository);
         csrfFilter.setRequestHandler(new CsrfTokenRequestAttributeHandler());
         csrfFilter.setRequireCsrfProtectionMatcher(
                 new AndRequestMatcher(CsrfFilter.DEFAULT_CSRF_MATCHER, new NegatedRequestMatcher(loginOrSignup)));

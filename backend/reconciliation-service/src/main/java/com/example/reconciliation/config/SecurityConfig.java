@@ -69,7 +69,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationConverter converter)
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            JwtAuthenticationConverter converter,
+            @Value("${app.cookie.secure}") boolean cookieSecure,
+            @Value("${app.cookie.same-site}") String cookieSameSite)
             throws Exception {
         // Spring Security's oauth2ResourceServer() DSL auto-exempts any
         // Bearer-authenticated request from CSRF, on the assumption a bearer
@@ -80,7 +84,14 @@ public class SecurityConfig {
         // authenticated request from CSRF protection. Building CsrfFilter
         // directly (and disabling the DSL's own) sidesteps that auto-exempt
         // wiring entirely.
-        CsrfFilter csrfFilter = new CsrfFilter(CookieCsrfTokenRepository.withHttpOnlyFalse());
+        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        // XSRF-TOKEN must carry the same Secure/SameSite as auth-service's
+        // epp_token cookie -- otherwise the browser accepts one cookie and
+        // rejects the other under the exact same HTTPS/cross-site
+        // conditions, breaking the CSRF check silently in production.
+        csrfTokenRepository.setCookieCustomizer(
+                cookie -> cookie.secure(cookieSecure).sameSite(cookieSameSite));
+        CsrfFilter csrfFilter = new CsrfFilter(csrfTokenRepository);
         csrfFilter.setRequestHandler(new CsrfTokenRequestAttributeHandler());
 
         http.securityMatcher("/graphql", "/actuator/**")

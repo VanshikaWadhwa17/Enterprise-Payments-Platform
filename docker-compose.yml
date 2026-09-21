@@ -80,8 +80,8 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: auth
-      DB_USER: auth
-      DB_PASSWORD: auth
+      DB_USER: ${AUTH_DB_USER:-auth}
+      DB_PASSWORD: ${AUTH_DB_PASSWORD:-auth}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200,http://localhost:4201}
       AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
@@ -99,8 +99,8 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: accounts
-      DB_USER: accounts
-      DB_PASSWORD: accounts
+      DB_USER: ${ACCOUNT_DB_USER:-accounts}
+      DB_PASSWORD: ${ACCOUNT_DB_PASSWORD:-accounts}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200,http://localhost:4201}
@@ -120,8 +120,8 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: fraud
-      DB_USER: fraud
-      DB_PASSWORD: fraud
+      DB_USER: ${FRAUD_DB_USER:-fraud}
+      DB_PASSWORD: ${FRAUD_DB_PASSWORD:-fraud}
       KAFKA_BROKERS: kafka:19092
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200,http://localhost:4202}
       AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
@@ -153,8 +153,8 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: audit
-      DB_USER: audit
-      DB_PASSWORD: audit
+      DB_USER: ${AUDIT_DB_USER:-audit}
+      DB_PASSWORD: ${AUDIT_DB_PASSWORD:-audit}
       KAFKA_BROKERS: kafka:19092
     ports:
       - '${AUDIT_SERVICE_PORT:-8084}:8084'
@@ -172,8 +172,8 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: reconciliation
-      DB_USER: reconciliation
-      DB_PASSWORD: reconciliation
+      DB_USER: ${RECONCILIATION_DB_USER:-reconciliation}
+      DB_PASSWORD: ${RECONCILIATION_DB_PASSWORD:-reconciliation}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200,http://localhost:4203}
       AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
     ports:
@@ -184,6 +184,11 @@ services:
 
   # --- Frontend (Angular shell + MFEs) ---------------------------------
 
+  # NOTE: these URLs are read by the BROWSER (Apollo Client running client-side
+  # in the SPA), not by the container itself -- that's why they point at
+  # localhost:<host-mapped-port> rather than the Docker-network service name.
+  # infra/40-generate-env-js.sh renders them into env.js at container start;
+  # unset here they'd resolve to empty strings and break every request.
   shell:
     build:
       context: .
@@ -191,6 +196,16 @@ services:
       args:
         APP_NAME: shell
     container_name: epp-shell
+    environment:
+      GRAPHQL_PAYMENTS_URL: ${GRAPHQL_PAYMENTS_URL:-http://localhost:8080/graphql}
+      GRAPHQL_FRAUD_URL: ${GRAPHQL_FRAUD_URL:-http://localhost:8082/graphql}
+      GRAPHQL_RECONCILIATION_URL: ${GRAPHQL_RECONCILIATION_URL:-http://localhost:8085/graphql}
+      AUTH_API_URL: ${AUTH_API_URL:-http://localhost:8086}
+      REMOTE_PAYMENTS_URL: ${REMOTE_PAYMENTS_URL:-http://localhost:4201/remoteEntry.json}
+      REMOTE_FRAUD_URL: ${REMOTE_FRAUD_URL:-http://localhost:4202/remoteEntry.json}
+      REMOTE_RECONCILIATION_URL: ${REMOTE_RECONCILIATION_URL:-http://localhost:4203/remoteEntry.json}
+      REMOTE_REPORTS_URL: ${REMOTE_REPORTS_URL:-http://localhost:4204/remoteEntry.json}
+      REMOTE_ADMIN_URL: ${REMOTE_ADMIN_URL:-http://localhost:4205/remoteEntry.json}
     ports:
       - '4200:80'
 
@@ -201,6 +216,8 @@ services:
       args:
         APP_NAME: payments
     container_name: epp-payments
+    environment:
+      GRAPHQL_PAYMENTS_URL: ${GRAPHQL_PAYMENTS_URL:-http://localhost:8080/graphql}
     ports:
       - '4201:80'
 
@@ -211,6 +228,8 @@ services:
       args:
         APP_NAME: fraud
     container_name: epp-fraud
+    environment:
+      GRAPHQL_FRAUD_URL: ${GRAPHQL_FRAUD_URL:-http://localhost:8082/graphql}
     ports:
       - '4202:80'
 
@@ -221,6 +240,8 @@ services:
       args:
         APP_NAME: reconciliation
     container_name: epp-reconciliation
+    environment:
+      GRAPHQL_RECONCILIATION_URL: ${GRAPHQL_RECONCILIATION_URL:-http://localhost:8085/graphql}
     ports:
       - '4203:80'
 

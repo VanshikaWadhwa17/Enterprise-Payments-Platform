@@ -4,14 +4,19 @@ import {
 } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideGraphQL } from '@epp/graphql';
+import { getRuntimeEnv } from '@epp/utils';
 import { appRoutes } from './app.routes';
 
-// TODO: move to build-time environment config once the workspace has one;
-// see .env.example GRAPHQL_URL.
+// Only used when this MFE is served standalone (e.g. `nx serve fraud`);
+// once federated into the shell, the shell's own app.config providers this
+// instead. See public/env.js / infra/env.template.js for how the URL is
+// injected.
+const env = getRuntimeEnv();
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(appRoutes, withComponentInputBinding()),
-    provideGraphQL([{ name: 'fraud', uri: 'http://localhost:8082/graphql' }]),
+    provideGraphQL([{ name: 'fraud', uri: env['GRAPHQL_FRAUD_URL'] }]),
   ],
 };
