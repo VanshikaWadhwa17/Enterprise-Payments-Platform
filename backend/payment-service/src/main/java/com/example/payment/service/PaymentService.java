@@ -7,6 +7,7 @@ import com.example.payment.model.Beneficiary;
 import com.example.payment.model.Payment;
 import com.example.payment.model.PaymentStatus;
 import com.example.payment.repository.PaymentRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,6 +23,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentEventPublisher paymentEventPublisher;
     private final IdempotencyService idempotencyService;
+    private final MeterRegistry meterRegistry;
 
     public List<Payment> findAll() {
         return paymentRepository.findAll();
@@ -53,6 +55,7 @@ public class PaymentService {
             idempotencyService.record(input.idempotencyKey(), saved.getId());
         }
 
+        meterRegistry.counter("payments.creations", "currency", saved.getCurrency().name()).increment();
         paymentEventPublisher.publishCreated(saved);
         return saved;
     }
@@ -61,6 +64,8 @@ public class PaymentService {
     public Payment updateStatus(UUID id, PaymentStatus status) {
         Payment payment = findById(id);
         payment.setStatus(status);
-        return paymentRepository.save(payment);
+        Payment saved = paymentRepository.save(payment);
+        meterRegistry.counter("payments.status.changed", "status", status.name()).increment();
+        return saved;
     }
 }

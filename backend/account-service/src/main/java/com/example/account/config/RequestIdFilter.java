@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
 import org.slf4j.MDC;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -15,8 +17,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * so every log line emitted while handling it can be correlated. Accepts an
  * inbound X-Request-Id header (e.g. forwarded by a gateway/caller) or
  * generates one.
+ *
+ * <p>Ordered to run outermost, ahead of {@link RequestLoggingFilter}, so its
+ * {@code finally} block is the last thing to run as the chain unwinds --
+ * the single point where the MDC gets cleared for the request.
  */
 @Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class RequestIdFilter extends OncePerRequestFilter {
 
     private static final String HEADER = "X-Request-Id";
@@ -35,7 +42,7 @@ public class RequestIdFilter extends OncePerRequestFilter {
         try {
             chain.doFilter(request, response);
         } finally {
-            MDC.remove(MDC_KEY);
+            MDC.clear();
         }
     }
 }

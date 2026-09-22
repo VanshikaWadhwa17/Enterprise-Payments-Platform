@@ -1,0 +1,19 @@
+route:
+  receiver: default
+  group_by: ['alertname', 'job']
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 4h
+
+receivers:
+  # No real notification channel wired up for this phase (per design: the
+  # goal here is a visible, working failure -> alert pipeline, not a tuned
+  # on-call setup). Fired alerts are visible at :9093 and in Grafana's
+  # Alerting view. To notify a real channel, add slack_configs/
+  # email_configs/webhook_configs here, e.g.:
+  #
+  # - name: default
+  #   slack_configs:
+  #     - api_url: '<slack-webhook-url>'
+  #       channel: '#epp-alerts'
+  - name: default

@@ -222,3 +222,51 @@ Expected result: step 3 fails, step 4 succeeds. Both are enforced the same way �
 `account-service` authentication (it has none wired up today — pre-existing, unrelated gap), Kubernetes, Kafka redesign, database redesign, GraphQL redesign.
 
 (Reports/Admin deployment and adding `auth-service` to the CI test matrix were out of scope when this list was first written — both are now done: Reports/Admin are real features with their own Vercel projects in §6, and `auth-service` is in `.github/workflows/backend.yml`'s test matrix.)
+
+## Observability (Phase G)
+
+All 7 backend services now emit structured JSON logs (`logback-spring.xml`,
+four categories: request/error/authentication/business-event, correlated by
+`requestId`/`userId` in MDC) and Prometheus metrics at
+`/actuator/prometheus`. The three Kafka consumers (fraud/audit/notification-service)
+have bounded retry (1 initial attempt + 2 retries, 1s apart) with a
+per-service dead-letter topic (`payment-events.<service>.DLT`) on exhaustion.
+
+A local, opt-in Prometheus + Grafana + Loki + Promtail + Alertmanager stack
+lives in `docker-compose.observability.yml` / `infra/observability/`:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d
+```
+
+- **Grafana** — `http://localhost:3000`, login `admin` / `$GRAFANA_ADMIN_PASSWORD`
+  (defaults to `admin`; see `.env.example`). The "EPP Service Health"
+  dashboard is auto-provisioned: request rate/error rate/p95 latency per
+  service, JVM heap, Hikari connections, Kafka consumer failures, and a Loki
+  panel for tracing one request's logs across services by `requestId`.
+- **Prometheus** — `http://localhost:9090`; targets/alerts under `/targets`
+  and `/alerts`.
+- **Alertmanager** — `http://localhost:9093`. Three rules ship in
+  `infra/observability/alert-rules.yml`: `ServiceDown`, `HighErrorRate`
+  (>5% 5xx over 5m), `KafkaConsumerFailure` (fires on any single
+  retry-exhausted delivery — see the rule's own comment for why that's
+  deliberate, not a placeholder threshold). No real notification channel is
+  wired up (no Slack/email/webhook) — that's a deliberate scope boundary
+  for this phase, not an oversight; `infra/observability/alertmanager.yml`
+  documents where to add one.
+- **Loki/Promtail** — reads structured logs straight from Docker's container
+  logs via the Docker socket. Labels stay low-cardinality (`service`,
+  `level`, `container`); `requestId`/`userId` are queried out of the JSON
+  body at query time (`| json | requestId="..."`), never promoted to
+  labels — Loki's label index would blow up otherwise.
+
+Plain `docker compose up` is unaffected — the observability stack is a
+second compose file, layered on top, never required for normal local dev.
+
+**Known gap: this doesn't extend to the Railway/Vercel path in §3–8 above.**
+Railway has no managed Prometheus/Grafana/Loki equivalent, and this phase
+didn't build one. The realistic production path is pointing each Railway
+service's `/actuator/prometheus` at a hosted option's `remote_write`
+endpoint (Grafana Cloud's free tier, Better Stack, etc.) and using that
+provider's own dashboards/alerting — not self-hosting this same stack on
+Railway. That wiring is documented future work, not shipped here.

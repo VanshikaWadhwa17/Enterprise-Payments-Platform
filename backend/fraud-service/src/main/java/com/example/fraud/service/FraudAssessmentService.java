@@ -5,6 +5,7 @@ import com.example.fraud.model.FraudCase;
 import com.example.fraud.model.FraudCaseStatus;
 import com.example.fraud.model.RiskLevel;
 import com.example.fraud.repository.FraudCaseRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ public class FraudAssessmentService {
             "New device", "Unusual location", "High transaction velocity", "First payment to this beneficiary");
 
     private final FraudCaseRepository fraudCaseRepository;
+    private final MeterRegistry meterRegistry;
 
     public FraudCase assess(PaymentCreatedEvent event) {
         Random random = new Random(event.paymentId().hashCode());
@@ -51,7 +53,9 @@ public class FraudAssessmentService {
         fraudCase.setStatus(FraudCaseStatus.OPEN);
         fraudCase.setOpenedAt(Instant.now());
 
-        return fraudCaseRepository.save(fraudCase);
+        FraudCase saved = fraudCaseRepository.save(fraudCase);
+        meterRegistry.counter("fraud.cases.opened", "riskLevel", saved.getRiskLevel().name()).increment();
+        return saved;
     }
 
     private int amountScore(BigDecimal amount) {

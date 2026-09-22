@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
 import org.slf4j.MDC;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -15,8 +17,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * so every log line emitted while handling it can be correlated. Accepts an
  * inbound X-Request-Id header (e.g. forwarded by a gateway/caller) or
  * generates one.
+ *
+ * <p>This filter runs outermost (before Spring Security), so it's also the
+ * single place the MDC gets cleared for the request -- {@link
+ * MdcUserIdFilter} sets {@code userId} once authentication has resolved
+ * further down the chain, but relies on this filter's {@code finally} block
+ * to clear it, since it runs first and last around everything nested inside
+ * it (including Security's own filters). A single clear point avoids MDC
+ * leaking onto the next request handled by the same pooled thread.
  */
 @Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class RequestIdFilter extends OncePerRequestFilter {
 
     private static final String HEADER = "X-Request-Id";
@@ -35,7 +46,7 @@ public class RequestIdFilter extends OncePerRequestFilter {
         try {
             chain.doFilter(request, response);
         } finally {
-            MDC.remove(MDC_KEY);
+            MDC.clear();
         }
     }
 }
